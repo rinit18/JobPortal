@@ -86,6 +86,13 @@ public class JobServiceImpl implements JobService {
 		applicants.add(applicantDTO.toEntity());
 		job.setApplicants(applicants);
 		jobRepository.save(job);
+		
+		NotificationDTO notiDto = new NotificationDTO();
+		notiDto.setAction("New Application");
+		notiDto.setMessage(applicantDTO.getName() + " applied for your job: " + job.getJobTitle());
+		notiDto.setUserId(job.getPostedBy());
+		notiDto.setRoute("/posted-jobs/" + id);
+		notificationService.sendNotification(notiDto);
 	}
 
 	@Override
@@ -110,13 +117,23 @@ public class JobServiceImpl implements JobService {
 					x.setInterviewTime(application.getInterviewTime());
 					NotificationDTO notiDto=new NotificationDTO();
 					notiDto.setAction("Interview Scheduled");
-					notiDto.setMessage("Interview scheduled for job id: "+application.getId());
+					notiDto.setMessage("Interview scheduled for job: "+job.getJobTitle());
 					notiDto.setUserId(application.getApplicantId());
 					notiDto.setRoute("/job-history");
 					try {
 						notificationService.sendNotification(notiDto);
 					} catch (JobPortalException e) {
-						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					NotificationDTO notiDto=new NotificationDTO();
+					notiDto.setAction("Application Update");
+					notiDto.setMessage("Your application status for "+job.getJobTitle()+" is now "+application.getApplicationStatus());
+					notiDto.setUserId(application.getApplicantId());
+					notiDto.setRoute("/job-history");
+					try {
+						notificationService.sendNotification(notiDto);
+					} catch (JobPortalException e) {
 						e.printStackTrace();
 					}
 				}

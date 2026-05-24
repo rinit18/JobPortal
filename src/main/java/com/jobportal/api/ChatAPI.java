@@ -23,6 +23,8 @@ import com.jobportal.entity.Profile;
 import com.jobportal.repository.ChatRoomRepository;
 import com.jobportal.repository.MessageRepository;
 import com.jobportal.repository.ProfileRepository;
+import com.jobportal.dto.NotificationDTO;
+import com.jobportal.service.NotificationService;
 
 @RestController
 @CrossOrigin
@@ -41,6 +43,9 @@ public class ChatAPI {
 
     @Autowired
     private com.jobportal.repository.UserRepository userRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @PostMapping("/room-by-user")
     public ResponseEntity<ChatRoom> getOrCreateRoomByUser(@RequestParam Long senderId, @RequestParam Long recipientUserId) {
@@ -125,6 +130,25 @@ public class ChatAPI {
             room.setLastMessage(message.getText());
             room.setLastActive(LocalDateTime.now());
             chatRoomRepository.save(room);
+            
+            try {
+                NotificationDTO notiDto = new NotificationDTO();
+                notiDto.setAction("New Message");
+                
+                String senderName = "Someone";
+                if (message.getSenderId().equals(room.getUser1Id())) {
+                    senderName = room.getUser1Name();
+                } else if (message.getSenderId().equals(room.getUser2Id())) {
+                    senderName = room.getUser2Name();
+                }
+                
+                notiDto.setMessage("You received a new message from " + senderName);
+                notiDto.setUserId(message.getRecipientId());
+                notiDto.setRoute("/messages?roomId=" + room.getId());
+                notificationService.sendNotification(notiDto);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         return new ResponseEntity<>(savedMessage, HttpStatus.CREATED);
