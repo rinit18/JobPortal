@@ -96,6 +96,13 @@
 			<artifactId>pdfbox</artifactId>
 			<version>3.0.2</version>
 		</dependency>
+
+		<!-- Rate Limiting -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j-core</artifactId>
+			<version>8.1.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -9,6 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Refill;
+import java.time.Duration;
+
 @Service
 public class AiService {
 
@@ -21,6 +26,10 @@ public class AiService {
         "https://api.groq.com/openai/v1/chat/completions";
 
     private final RestTemplate restTemplate = new RestTemplate();
+    
+    private final Bucket globalBucket = Bucket.builder()
+        .addLimit(Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(1))))
+        .build();
 
     /**
      * Generate a professional job description based on a short input prompt.
@@ -86,6 +95,10 @@ public class AiService {
      * Calls the Groq OpenAI-compatible API and returns the generated text.
      */
     private String callGroq(String prompt) {
+        if (!globalBucket.tryConsume(1)) {
+            return "{\"error\": \"Rate limit reached (10 req/min). Please wait a moment and try again.\"}";
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(groqApiKey);

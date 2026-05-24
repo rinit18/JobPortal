@@ -27,6 +27,12 @@ import com.jobportal.repository.UserRepository;
 import com.jobportal.utility.Data;
 import com.jobportal.utility.Utilities;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Refill;
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
@@ -49,6 +55,14 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private NotificationService notificationService;
+	
+	private final ConcurrentHashMap<String, Bucket> otpBuckets = new ConcurrentHashMap<>();
+
+	private Bucket resolveOtpBucket(String email) {
+		return otpBuckets.computeIfAbsent(email, k -> Bucket.builder()
+				.addLimit(Bandwidth.classic(3, Refill.intervally(3, Duration.ofHours(1))))
+				.build());
+	}
 	
 	@Override
 	public UserDTO registerUser(UserDTO userDTO) throws JobPortalException {
@@ -76,6 +90,12 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Boolean sendOTP(String email) throws Exception {
 		User user=userRepository.findByEmail(email).orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
+		
+		Bucket bucket = resolveOtpBucket(email);
+		if (!bucket.tryConsume(1)) {
+			throw new JobPortalException("OTP_LIMIT_EXCEEDED");
+		}
+
 		MimeMessage mm = mailSender.createMimeMessage();
 		MimeMessageHelper message = new MimeMessageHelper(mm, true);
 		message.setTo(email);
