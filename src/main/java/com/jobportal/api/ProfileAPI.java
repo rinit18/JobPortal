@@ -39,5 +39,10 @@ public class ProfileAPI {
 	public ResponseEntity<ProfileDTO>updateProfile(@RequestBody ProfileDTO profileDTO) throws JobPortalException{
 		return new ResponseEntity<>(profileService.updateProfile(profileDTO), HttpStatus.OK);
 	}
+
+	@GetMapping("/search")
+	public ResponseEntity<List<ProfileDTO>> searchProfiles(@org.springframework.web.bind.annotation.RequestParam String query) throws JobPortalException {
+		return new ResponseEntity<>(profileService.searchProfiles(query), HttpStatus.OK);
+	}
 	
 }

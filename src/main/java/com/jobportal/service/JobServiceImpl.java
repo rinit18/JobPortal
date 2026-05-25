@@ -64,6 +64,20 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	public List<JobDTO> searchJobs(String query) throws JobPortalException {
+		return jobRepository.findByJobStatus(JobStatus.ACTIVE).stream()
+			.filter(j -> {
+				if (Utilities.isFuzzyMatch(j.getJobTitle(), query)) return true;
+				if (Utilities.isFuzzyMatch(j.getCompany(), query)) return true;
+				if (Utilities.isFuzzyMatch(j.getLocation(), query)) return true;
+				if (j.getSkillsRequired() != null && j.getSkillsRequired().stream().anyMatch(s -> Utilities.isFuzzyMatch(s, query))) return true;
+				return false;
+			})
+			.map(Job::toDTO)
+			.toList();
+	}
+
+	@Override
 	public Map<String, Object> getJobsPage(int page, int size) throws JobPortalException {
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Job> jobPage = jobRepository.findByJobStatus(JobStatus.ACTIVE, pageable);

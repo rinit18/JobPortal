@@ -55,6 +55,11 @@ public class JobAPI {
 		return new ResponseEntity<>(jobService.getAllJobs(), HttpStatus.OK);
 	}
 
+	@GetMapping("/search")
+	public ResponseEntity<List<JobDTO>> searchJobs(@RequestParam String query) throws JobPortalException {
+		return new ResponseEntity<>(jobService.searchJobs(query), HttpStatus.OK);
+	}
+
 	@GetMapping("/page")
 	public ResponseEntity<Map<String, Object>>getJobsPage(
 			@RequestParam(defaultValue = "0") int page,

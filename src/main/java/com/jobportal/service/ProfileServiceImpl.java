@@ -48,6 +48,17 @@ public class ProfileServiceImpl implements ProfileService {
 	public List<ProfileDTO> getAllProfiles() throws JobPortalException {
 		return profileRepository.findAll().stream().map((x)->x.toDTO()).toList();
 	}
+	@Override
+	public List<ProfileDTO> searchProfiles(String query) throws JobPortalException {
+		return profileRepository.findAll().stream()
+			.filter(p -> {
+				if (Utilities.isFuzzyMatch(p.getName(), query)) return true;
+				if (Utilities.isFuzzyMatch(p.getJobTitle(), query)) return true;
+				if (p.getSkills() != null && p.getSkills().stream().anyMatch(s -> Utilities.isFuzzyMatch(s, query))) return true;
+				return false;
+			})
+			.map((x) -> x.toDTO())
+			.toList();
+	}
 	
-
 }

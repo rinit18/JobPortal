@@ -44,4 +44,48 @@ public class Utilities {
 		}
 		return otp.toString();
 	}
+
+	public static int calculateLevenshteinDistance(String a, String b) {
+		a = a.toLowerCase();
+		b = b.toLowerCase();
+		int[] costs = new int[b.length() + 1];
+		for (int j = 0; j < costs.length; j++)
+			costs[j] = j;
+		for (int i = 1; i <= a.length(); i++) {
+			costs[0] = i;
+			int nw = i - 1;
+			for (int j = 1; j <= b.length(); j++) {
+				int cj = Math.min(1 + Math.min(costs[j], costs[j - 1]),
+						a.charAt(i - 1) == b.charAt(j - 1) ? nw : nw + 1);
+				nw = costs[j];
+				costs[j] = cj;
+			}
+		}
+		return costs[b.length()];
+	}
+
+	public static boolean isFuzzyMatch(String text, String query) {
+		if (text == null || query == null || query.trim().isEmpty()) return false;
+		if (text.toLowerCase().contains(query.toLowerCase())) return true;
+		
+		String[] words = text.toLowerCase().split("\\s+");
+		String[] queryWords = query.toLowerCase().trim().split("\\s+");
+		
+		for (String qWord : queryWords) {
+			boolean wordMatched = false;
+			for (String word : words) {
+				if (word.contains(qWord)) {
+					wordMatched = true;
+					break;
+				}
+				int maxDist = Math.max(1, qWord.length() / 4); 
+				if (calculateLevenshteinDistance(word, qWord) <= maxDist) {
+					wordMatched = true;
+					break;
+				}
+			}
+			if (!wordMatched) return false;
+		}
+		return true;
+	}
 }

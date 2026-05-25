@@ -19,6 +19,8 @@ public interface JobService {
 
 	public List<JobDTO> getAllJobs() throws JobPortalException;
 
+	public List<JobDTO> searchJobs(String query) throws JobPortalException;
+
 	public Map<String, Object> getJobsPage(int page, int size) throws JobPortalException;
 
 	public JobDTO getJob(Long id) throws JobPortalException;

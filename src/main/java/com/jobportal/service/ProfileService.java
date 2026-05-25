@@ -14,4 +14,6 @@ public interface ProfileService {
 	public ProfileDTO updateProfile(ProfileDTO profileDTO) throws JobPortalException;
 
 	public List<ProfileDTO> getAllProfiles() throws JobPortalException;
+
+	public List<ProfileDTO> searchProfiles(String query) throws JobPortalException;
 }
