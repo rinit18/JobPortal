@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 public class JwtHelper {
 	private String secret = "afafasfafafasfasfasfafacasdasfasxASFACASDFACASDFASFASFDAFASFASDAADSCSDFADCVSGCFVADXCcadwavfsfarvf";
 
-	// Token expiration time in milliseconds (e.g., 1 hour = 3600000 ms)
-	private static final long JWT_TOKEN_VALIDITY = 36000000;
+	// Token expiration time in milliseconds (1 hour = 3600000 ms)
+	private static final long JWT_TOKEN_VALIDITY = 3600000;
 
 	// Retrieve username (or subject) from the JWT token
 	public String getUsernameFromToken(String token) {

@@ -17,6 +17,8 @@ public interface UserService {
 	public UserDTO loginUser(LoginDTO loginDTO) throws JobPortalException;
 
 	public Boolean sendOTP(String email) throws  Exception;
+	
+	public Boolean sendRegistrationOTP(String email) throws Exception;
 
 	public ResponseDTO verifyOtp( String email, String otp) throws JobPortalException;
 

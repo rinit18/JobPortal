@@ -51,6 +51,12 @@ public class UserAPI {
 		ResponseDTO response=new ResponseDTO("OTP sent successfully.");
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
+	@PostMapping("/sendOtp/Register/{email}")
+	public ResponseEntity<ResponseDTO>sendRegistrationOtp(@PathVariable @Email(message="{user.email.invalid}")  String email) throws Exception{
+		userService.sendRegistrationOTP(email);
+		ResponseDTO response=new ResponseDTO("Registration OTP sent successfully.");
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
 	@PostMapping("/verifyOtp")
 	public ResponseEntity<ResponseDTO>verifyOtp(@RequestBody @Valid VerifyOtpDTO verifyOtpDTO) throws JobPortalException{
 		return new ResponseEntity<>(userService.verifyOtp(verifyOtpDTO.getEmail(), verifyOtpDTO.getOtp()), HttpStatus.ACCEPTED);

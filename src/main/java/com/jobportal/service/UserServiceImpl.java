@@ -126,6 +126,31 @@ public class UserServiceImpl implements UserService {
 		return true;
 	}
 	
+	@Override
+	public Boolean sendRegistrationOTP(String email) throws Exception {
+		Optional<User> optional = userRepository.findByEmail(email);
+		if (optional.isPresent())
+			throw new JobPortalException("USER_FOUND");
+		
+		Bucket bucket = resolveOtpBucket(email);
+		if (!bucket.tryConsume(1)) {
+			throw new JobPortalException("OTP_LIMIT_EXCEEDED");
+		}
+
+		MimeMessage mm = mailSender.createMimeMessage();
+		MimeMessageHelper message = new MimeMessageHelper(mm, true);
+		message.setTo(email);
+		message.setSubject("Your Registration OTP Code");
+		String generatedOtp = Utilities.generateOTP();
+		OTP otp = new OTP(email, generatedOtp, LocalDateTime.now());
+		otpRepository.save(otp);
+		String defaultName = email.contains("@") ? email.split("@")[0] : "Future User";
+		message.setText(Data.getMessageBody(generatedOtp, defaultName), true);
+		mailSender.send(mm);
+		return true;
+	}
+
+	
 
 	@Override
 	public ResponseDTO verifyOtp(String email, String otp) throws JobPortalException {
