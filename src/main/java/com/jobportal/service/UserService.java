@@ -24,4 +24,7 @@ public interface UserService {
 
 	public ResponseDTO changePassword(ResetPasswordDTO resetPasswordDTO) throws JobPortalException;
 	
+	public ResponseDTO updatePassword(com.jobportal.dto.UpdatePasswordDTO updatePasswordDTO) throws JobPortalException;
+	
+	public ResponseDTO deleteUserAccount(String email) throws JobPortalException;
 }

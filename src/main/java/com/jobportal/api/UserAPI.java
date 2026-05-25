@@ -61,4 +61,12 @@ public class UserAPI {
 	public ResponseEntity<ResponseDTO>verifyOtp(@RequestBody @Valid VerifyOtpDTO verifyOtpDTO) throws JobPortalException{
 		return new ResponseEntity<>(userService.verifyOtp(verifyOtpDTO.getEmail(), verifyOtpDTO.getOtp()), HttpStatus.ACCEPTED);
 	}
+	@PostMapping("/updatePassword")
+	public ResponseEntity<ResponseDTO>updatePassword(@RequestBody @Valid com.jobportal.dto.UpdatePasswordDTO updatePasswordDTO) throws JobPortalException{
+		return new ResponseEntity<>(userService.updatePassword(updatePasswordDTO), HttpStatus.OK);
+	}
+	@PostMapping("/deleteAccount/{email}")
+	public ResponseEntity<ResponseDTO>deleteAccount(@PathVariable @Email(message="{user.email.invalid}") String email) throws JobPortalException{
+		return new ResponseEntity<>(userService.deleteUserAccount(email), HttpStatus.OK);
+	}
 }

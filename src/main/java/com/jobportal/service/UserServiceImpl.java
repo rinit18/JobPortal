@@ -49,6 +49,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private ProfileService profileService;
+	
+	@Autowired
+	private com.jobportal.repository.ProfileRepository profileRepository;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -198,5 +201,41 @@ public class UserServiceImpl implements UserService {
 	public UserDTO getUserByEmail(String email) throws JobPortalException {
 		return userRepository.findByEmail(email).orElseThrow(() -> new JobPortalException("USER_NOT_FOUND")).toDTO();
 	}
+	
+	@Override
+	public ResponseDTO updatePassword(com.jobportal.dto.UpdatePasswordDTO updatePasswordDTO) throws JobPortalException {
+		User user = userRepository.findByEmail(updatePasswordDTO.getEmail())
+				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
+		
+		if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), user.getPassword())) {
+			throw new JobPortalException("INVALID_CREDENTIALS");
+		}
+		
+		user.setPassword(passwordEncoder.encode(updatePasswordDTO.getNewPassword()));
+		userRepository.save(user);
+		
+		NotificationDTO noti = new NotificationDTO();
+		noti.setUserId(user.getId());
+		noti.setMessage("Password changed successfully from Settings");
+		noti.setAction("Password Update");
+		notificationService.sendNotification(noti);
+		
+		return new ResponseDTO("Password updated successfully.");
+	}
 
+	@Override
+	public ResponseDTO deleteUserAccount(String email) throws JobPortalException {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
+		
+		// Delete profile
+		if (user.getProfileId() != null) {
+			profileRepository.deleteById(user.getProfileId());
+		}
+		
+		// Delete user
+		userRepository.delete(user);
+		
+		return new ResponseDTO("Account and associated data deleted successfully.");
+	}
 }
