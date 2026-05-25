@@ -30,7 +30,7 @@ public class Data {
 				+ "            <p>This OTP code is valid for 5 minutes. If you did not request this, please ignore this email.</p>\n"
 				+ "            <p>Thank you for using our service!</p>\n" + "        </div>\n"
 				+ "        <div class=\"footer\">\n" + "            <p>&copy;" + Year.now().getValue()
-				+ " JobHook . All rights reserved.</p>\n" + "        </div>\n" + "    </div>\n" + "</body>\n"
+				+ " CareerConnect . All rights reserved.</p>\n" + "        </div>\n" + "    </div>\n" + "</body>\n"
 				+ "</html>";
 	}
 }
