@@ -35,7 +35,7 @@ public class NotificationServiceImpl implements NotificationService{
 
 	@Override
 	public void readNotification(Long id) throws JobPortalException {
-		Notification noti=notificationRepository.findById(id).orElseThrow(()->new JobPortalException("No Notitication found"));
+		Notification noti=notificationRepository.findById(id).orElseThrow(()->new JobPortalException("No Notification found"));
 		noti.setStatus(NotificationStatus.READ);
 		notificationRepository.save(noti);
 		

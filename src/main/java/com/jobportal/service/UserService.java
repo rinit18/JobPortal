@@ -1,6 +1,7 @@
 package com.jobportal.service;
 
 import com.jobportal.dto.LoginDTO;
+import com.jobportal.dto.ResetPasswordDTO;
 import com.jobportal.dto.ResponseDTO;
 import com.jobportal.dto.UserDTO;
 import com.jobportal.exception.JobPortalException;
@@ -17,8 +18,8 @@ public interface UserService {
 
 	public Boolean sendOTP(String email) throws  Exception;
 
-	public Boolean verifyOtp( String email, String otp) throws JobPortalException;
+	public ResponseDTO verifyOtp( String email, String otp) throws JobPortalException;
 
-	public ResponseDTO changePassword( LoginDTO loginDTO) throws JobPortalException;
+	public ResponseDTO changePassword(ResetPasswordDTO resetPasswordDTO) throws JobPortalException;
 	
 }

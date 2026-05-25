@@ -22,6 +22,7 @@ import com.jobportal.entity.Applicant;
 import com.jobportal.entity.Job;
 import com.jobportal.exception.JobPortalException;
 import com.jobportal.repository.JobRepository;
+import com.jobportal.repository.UserRepository;
 import com.jobportal.utility.Utilities;
 
 @Service("jobService")
@@ -31,6 +32,10 @@ public class JobServiceImpl implements JobService {
 	private JobRepository jobRepository;
 	@Autowired
 	private NotificationService notificationService;
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private EmailService emailService;
 
 	@Override
 	public JobDTO postJob(JobDTO jobDTO) throws JobPortalException {
@@ -55,7 +60,7 @@ public class JobServiceImpl implements JobService {
 	
 	@Override
 	public List<JobDTO> getAllJobs() throws JobPortalException {
-		return jobRepository.findAll().stream().map((x) -> x.toDTO()).toList();
+		return jobRepository.findByJobStatus(JobStatus.ACTIVE).stream().map((x) -> x.toDTO()).toList();
 	}
 
 	@Override
@@ -81,7 +86,7 @@ public class JobServiceImpl implements JobService {
 		Job job = jobRepository.findById(id).orElseThrow(() -> new JobPortalException("JOB_NOT_FOUND"));
 		List<Applicant> applicants = job.getApplicants();
 		if (applicants == null)applicants = new ArrayList<>();
-		if (applicants.stream().filter((x) -> x.getApplicantId() == applicantDTO.getApplicantId()).toList().size() > 0)throw new JobPortalException("JOB_APPLIED_ALREADY");
+		if (applicants.stream().anyMatch((x) -> x.getApplicantId().equals(applicantDTO.getApplicantId())))throw new JobPortalException("JOB_APPLIED_ALREADY");
 		applicantDTO.setApplicationStatus(ApplicationStatus.APPLIED);
 		applicants.add(applicantDTO.toEntity());
 		job.setApplicants(applicants);
@@ -93,6 +98,16 @@ public class JobServiceImpl implements JobService {
 		notiDto.setUserId(job.getPostedBy());
 		notiDto.setRoute("/posted-jobs/" + id);
 		notificationService.sendNotification(notiDto);
+
+		// Send Gmail to employer
+		userRepository.findById(job.getPostedBy()).ifPresent(employer -> {
+			emailService.sendNewApplicationEmail(
+				employer.getEmail(),
+				employer.getName() != null ? employer.getName() : "Recruiter",
+				applicantDTO.getName(),
+				job.getJobTitle()
+			);
+		});
 	}
 
 	@Override
@@ -111,7 +126,7 @@ public class JobServiceImpl implements JobService {
 	public void changeAppStatus(Application application) throws JobPortalException {
 		Job job = jobRepository.findById(application.getId()).orElseThrow(() -> new JobPortalException("JOB_NOT_FOUND"));
 		List<Applicant> apps = job.getApplicants().stream().map((x) -> {
-			if (application.getApplicantId() == x.getApplicantId()) {
+			if (application.getApplicantId().equals(x.getApplicantId())) {
 				x.setApplicationStatus(application.getApplicationStatus());
 				if(application.getApplicationStatus().equals(ApplicationStatus.INTERVIEWING)) {
 					x.setInterviewTime(application.getInterviewTime());
@@ -120,22 +135,23 @@ public class JobServiceImpl implements JobService {
 					notiDto.setMessage("Interview scheduled for job: "+job.getJobTitle());
 					notiDto.setUserId(application.getApplicantId());
 					notiDto.setRoute("/job-history");
-					try {
-						notificationService.sendNotification(notiDto);
-					} catch (JobPortalException e) {
-						e.printStackTrace();
-					}
+					try { notificationService.sendNotification(notiDto); } catch (JobPortalException e) { e.printStackTrace(); }
+					// Gmail
+					userRepository.findById(application.getApplicantId()).ifPresent(applicant ->
+						emailService.sendStatusUpdateEmail(applicant.getEmail(), applicant.getName() != null ? applicant.getName() : "Applicant", job.getJobTitle(), "INTERVIEWING")
+					);
 				} else {
 					NotificationDTO notiDto=new NotificationDTO();
 					notiDto.setAction("Application Update");
 					notiDto.setMessage("Your application status for "+job.getJobTitle()+" is now "+application.getApplicationStatus());
 					notiDto.setUserId(application.getApplicantId());
 					notiDto.setRoute("/job-history");
-					try {
-						notificationService.sendNotification(notiDto);
-					} catch (JobPortalException e) {
-						e.printStackTrace();
-					}
+					try { notificationService.sendNotification(notiDto); } catch (JobPortalException e) { e.printStackTrace(); }
+					// Gmail
+					String statusStr = application.getApplicationStatus().name();
+					userRepository.findById(application.getApplicantId()).ifPresent(applicant ->
+						emailService.sendStatusUpdateEmail(applicant.getEmail(), applicant.getName() != null ? applicant.getName() : "Applicant", job.getJobTitle(), statusStr)
+					);
 				}
 			}
 			return x;

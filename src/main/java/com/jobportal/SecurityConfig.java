@@ -35,7 +35,8 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeRequests().
-                requestMatchers("/auth/login","/users/register", "/users/verifyOtp/**","/users/sendOtp/**","/users/changePass", "/support/**").permitAll()
+                requestMatchers("/auth/login","/users/register", "/users/verifyOtp","/users/sendOtp/**","/users/changePass", "/support/**").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/ai/**").authenticated()
                 .requestMatchers("/resume/**").authenticated()
                 .anyRequest()
@@ -49,8 +50,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow Vercel frontend URL, localhost, and any other frontend origin
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); 
+        // Allow Vercel frontend URL, localhost
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "https://*.vercel.app")); 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

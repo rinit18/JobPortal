@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jobportal.dto.LoginDTO;
+import com.jobportal.dto.ResetPasswordDTO;
 import com.jobportal.dto.ResponseDTO;
 import com.jobportal.dto.UserDTO;
+import com.jobportal.dto.VerifyOtpDTO;
 import com.jobportal.exception.JobPortalException;
 import com.jobportal.service.UserService;
 
@@ -40,8 +42,8 @@ public class UserAPI {
 		return new ResponseEntity<>(userService.loginUser(loginDTO), HttpStatus.OK);
 	}
 	@PostMapping("/changePass")
-	public ResponseEntity<ResponseDTO>changePassword(@RequestBody @Valid LoginDTO loginDTO) throws JobPortalException{
-		return new ResponseEntity<>(userService.changePassword(loginDTO), HttpStatus.OK);
+	public ResponseEntity<ResponseDTO>changePassword(@RequestBody @Valid ResetPasswordDTO resetPasswordDTO) throws JobPortalException{
+		return new ResponseEntity<>(userService.changePassword(resetPasswordDTO), HttpStatus.OK);
 	}
 	@PostMapping("/sendOtp/{email}")
 	public ResponseEntity<ResponseDTO>sendOtp(@PathVariable @Email(message="{user.email.invalid}")  String email) throws Exception{
@@ -49,9 +51,8 @@ public class UserAPI {
 		ResponseDTO response=new ResponseDTO("OTP sent successfully.");
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
-	@GetMapping("/verifyOtp/{email}/{otp}")
-	public ResponseEntity<ResponseDTO>verifyOtp(@PathVariable @NotBlank(message="{user.email.absent}") @Email(message="{user.email.invalid}")  String email, @PathVariable @Pattern(regexp = "^[0-9]{6}$", message = "{otp.invalid}") String otp) throws JobPortalException{
-		userService.verifyOtp(email, otp);
-		return new ResponseEntity<>(new ResponseDTO("OTP has been verified."), HttpStatus.ACCEPTED);
+	@PostMapping("/verifyOtp")
+	public ResponseEntity<ResponseDTO>verifyOtp(@RequestBody @Valid VerifyOtpDTO verifyOtpDTO) throws JobPortalException{
+		return new ResponseEntity<>(userService.verifyOtp(verifyOtpDTO.getEmail(), verifyOtpDTO.getOtp()), HttpStatus.ACCEPTED);
 	}
 }

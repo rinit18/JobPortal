@@ -63,6 +63,31 @@ public class JwtHelper {
 				.setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY)).signWith(SignatureAlgorithm.HS512, secret).compact();
 	}
 
+	// Generate a short-lived reset token (valid for 15 minutes)
+	public String generateResetToken(String email) {
+		Map<String, Object> claims = new HashMap<>();
+		claims.put("purpose", "reset_password");
+		long resetValidity = 15 * 60 * 1000; // 15 minutes
+		return Jwts.builder()
+				.setClaims(claims)
+				.setSubject(email)
+				.setIssuedAt(new Date(System.currentTimeMillis()))
+				.setExpiration(new Date(System.currentTimeMillis() + resetValidity))
+				.signWith(SignatureAlgorithm.HS512, secret)
+				.compact();
+	}
+
+	// Validate reset token
+	public Boolean validateResetToken(String token, String email) {
+		try {
+			final String tokenEmail = getUsernameFromToken(token);
+			final String purpose = getClaimFromToken(token, claims -> claims.get("purpose", String.class));
+			return (tokenEmail.equals(email) && "reset_password".equals(purpose) && !isTokenExpired(token));
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
 	// Validate the token
 	public Boolean validateToken(String token, String username) {
 		final String tokenUsername = getUsernameFromToken(token);

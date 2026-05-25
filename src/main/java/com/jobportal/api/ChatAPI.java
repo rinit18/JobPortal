@@ -24,6 +24,7 @@ import com.jobportal.repository.ChatRoomRepository;
 import com.jobportal.repository.MessageRepository;
 import com.jobportal.repository.ProfileRepository;
 import com.jobportal.dto.NotificationDTO;
+import com.jobportal.service.EmailService;
 import com.jobportal.service.NotificationService;
 
 @RestController
@@ -46,6 +47,9 @@ public class ChatAPI {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private EmailService emailService;
 
     @PostMapping("/room-by-user")
     public ResponseEntity<ChatRoom> getOrCreateRoomByUser(@RequestParam Long senderId, @RequestParam Long recipientUserId) {
@@ -146,6 +150,16 @@ public class ChatAPI {
                 notiDto.setUserId(message.getRecipientId());
                 notiDto.setRoute("/messages?roomId=" + room.getId());
                 notificationService.sendNotification(notiDto);
+
+                // Send Gmail to recipient
+                final String finalSenderName = senderName;
+                final String msgPreview = message.getText() != null && message.getText().length() > 120
+                    ? message.getText().substring(0, 120) + "..."
+                    : message.getText();
+                userRepository.findById(message.getRecipientId()).ifPresent(recipient -> {
+                    String recipientName = recipient.getName() != null ? recipient.getName() : "there";
+                    emailService.sendNewMessageEmail(recipient.getEmail(), recipientName, finalSenderName, msgPreview);
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -43,7 +43,7 @@ public class AiService {
             "using <h4>, <p>, <ul>, and <li> tags. Do not include <html>, <body> or <head> tags.",
             jobTitle, notes
         );
-        return callGroq(prompt);
+        return callGroq(prompt, false);
     }
 
     /**
@@ -95,6 +95,10 @@ public class AiService {
      * Calls the Groq OpenAI-compatible API and returns the generated text.
      */
     private String callGroq(String prompt) {
+        return callGroq(prompt, true);
+    }
+
+    private String callGroq(String prompt, boolean jsonMode) {
         if (!globalBucket.tryConsume(1)) {
             return "{\"error\": \"Rate limit reached (10 req/min). Please wait a moment and try again.\"}";
         }
@@ -104,13 +108,23 @@ public class AiService {
         headers.setBearerAuth(groqApiKey);
 
         Map<String, String> message = Map.of("role", "user", "content", prompt);
-        Map<String, Object> requestBody = Map.of(
-            "model", "llama-3.3-70b-versatile",
-            "messages", List.of(message),
-            "temperature", 0.7,
-            "max_tokens", 2048,
-            "response_format", Map.of("type", "json_object")
-        );
+        Map<String, Object> requestBody;
+        if (jsonMode) {
+            requestBody = Map.of(
+                "model", "llama-3.3-70b-versatile",
+                "messages", List.of(message),
+                "temperature", 0.7,
+                "max_tokens", 2048,
+                "response_format", Map.of("type", "json_object")
+            );
+        } else {
+            requestBody = Map.of(
+                "model", "llama-3.3-70b-versatile",
+                "messages", List.of(message),
+                "temperature", 0.7,
+                "max_tokens", 2048
+            );
+        }
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 

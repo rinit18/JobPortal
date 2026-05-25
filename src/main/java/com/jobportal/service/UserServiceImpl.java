@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import com.jobportal.dto.LoginDTO;
 import com.jobportal.dto.NotificationDTO;
+import com.jobportal.dto.ResetPasswordDTO;
 import com.jobportal.dto.ResponseDTO;
 import com.jobportal.dto.UserDTO;
 import com.jobportal.entity.OTP;
@@ -38,6 +39,8 @@ import jakarta.mail.internet.MimeMessage;
 
 @Service("userService")
 public class UserServiceImpl implements UserService {
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserServiceImpl.class);
+
 	@Autowired
 	private UserRepository userRepository;
 
@@ -56,11 +59,21 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private NotificationService notificationService;
 	
+	@Autowired
+	private com.jobportal.jwt.JwtHelper jwtHelper;
+
 	private final ConcurrentHashMap<String, Bucket> otpBuckets = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Bucket> loginBuckets = new ConcurrentHashMap<>();
 
 	private Bucket resolveOtpBucket(String email) {
 		return otpBuckets.computeIfAbsent(email, k -> Bucket.builder()
 				.addLimit(Bandwidth.classic(3, Refill.intervally(3, Duration.ofHours(1))))
+				.build());
+	}
+
+	private Bucket resolveLoginBucket(String email) {
+		return loginBuckets.computeIfAbsent(email, k -> Bucket.builder()
+				.addLimit(Bandwidth.classic(10, Refill.intervally(10, Duration.ofHours(1))))
 				.build());
 	}
 	
@@ -79,6 +92,11 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserDTO loginUser(LoginDTO loginDTO) throws JobPortalException {
+		Bucket bucket = resolveLoginBucket(loginDTO.getEmail());
+		if (!bucket.tryConsume(1)) {
+			throw new JobPortalException("LOGIN_LIMIT_EXCEEDED");
+		}
+
 		User user = userRepository.findByEmail(loginDTO.getEmail())
 				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
 		if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword()))
@@ -110,10 +128,13 @@ public class UserServiceImpl implements UserService {
 	
 
 	@Override
-	public Boolean verifyOtp(String email, String otp) throws JobPortalException {
+	public ResponseDTO verifyOtp(String email, String otp) throws JobPortalException {
 		OTP otpEntity = otpRepository.findById(email).orElseThrow(() -> new JobPortalException("OTP_NOT_FOUND"));
 		if(!otpEntity.getOtpCode().equals(otp))throw new JobPortalException("OTP_INCORRECT");
-		return true;
+		
+		// Generate reset token and return it
+		String resetToken = jwtHelper.generateResetToken(email);
+		return new ResponseDTO(resetToken);
 	}
 
 	@Scheduled(fixedRate = 60000)
@@ -122,21 +143,29 @@ public class UserServiceImpl implements UserService {
 		List<OTP> expiredOTPs = otpRepository.findByCreationTimeBefore(expiryTime);
 		if (!expiredOTPs.isEmpty()) {
 			otpRepository.deleteAll(expiredOTPs);
-			System.out.println("Removed "+ expiredOTPs.size()+" expired OTPs");
+			log.info("Removed {} expired OTPs", expiredOTPs.size());
 		}
 	}
 
 	@Override
-	public ResponseDTO changePassword(LoginDTO loginDTO) throws JobPortalException {
-		User user = userRepository.findByEmail(loginDTO.getEmail())
+	public ResponseDTO changePassword(ResetPasswordDTO resetPasswordDTO) throws JobPortalException {
+		if (!jwtHelper.validateResetToken(resetPasswordDTO.getToken(), resetPasswordDTO.getEmail())) {
+			throw new JobPortalException("INVALID_OR_EXPIRED_TOKEN");
+		}
+
+		User user = userRepository.findByEmail(resetPasswordDTO.getEmail())
 				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
-		user.setPassword(passwordEncoder.encode(loginDTO.getPassword()));
+		user.setPassword(passwordEncoder.encode(resetPasswordDTO.getPassword()));
 		userRepository.save(user);
 		NotificationDTO noti=new NotificationDTO();
 		noti.setUserId(user.getId());
 		noti.setMessage("Password Reset Successfull");
 		noti.setAction("Password Reset");
 		notificationService.sendNotification(noti);
+		
+		// Clean up the OTP
+		otpRepository.deleteById(resetPasswordDTO.getEmail());
+		
 		return new ResponseDTO("Password changed successfully.");
 	}
 

@@ -43,16 +43,11 @@ public class JobAPI {
 	
 	@PostMapping("/postAll")
 	public ResponseEntity<List<JobDTO>>postAllJob(@RequestBody @Valid List<JobDTO> jobDTOs) throws JobPortalException{
-		
-		return new ResponseEntity<>(jobDTOs.stream().map((x)->{
-			try {
-				return jobService.postJob(x);
-			} catch (JobPortalException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return x;
-		}).toList() , HttpStatus.CREATED);
+		List<JobDTO> postedJobs = new java.util.ArrayList<>();
+		for (JobDTO jobDTO : jobDTOs) {
+			postedJobs.add(jobService.postJob(jobDTO));
+		}
+		return new ResponseEntity<>(postedJobs, HttpStatus.CREATED);
 	}
 	
 	@GetMapping("/getAll")
@@ -88,7 +83,7 @@ public class JobAPI {
 	@PostMapping("/changeAppStatus")
 	public ResponseEntity<ResponseDTO>changeAppStatus(@RequestBody Application application) throws JobPortalException{
 		jobService.changeAppStatus(application);
-		return new ResponseEntity<>(new ResponseDTO("Status Chhanged Successfully"), HttpStatus.OK);
+		return new ResponseEntity<>(new ResponseDTO("Status Changed Successfully"), HttpStatus.OK);
 	}
 	
 	

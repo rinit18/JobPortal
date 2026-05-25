@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.jobportal.entity.ContactMessage;
 import com.jobportal.entity.Feedback;
+import com.jobportal.entity.Job;
+import com.jobportal.entity.User;
 import com.jobportal.repository.ContactMessageRepository;
 import com.jobportal.repository.FeedbackRepository;
 import com.jobportal.repository.JobRepository;
@@ -44,5 +46,29 @@ public class AdminService {
 
     public List<ContactMessage> getAllContactMessages() {
         return contactMessageRepository.findAll();
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    public List<Job> getAllJobs() {
+        return jobRepository.findAll();
+    }
+
+    public void deleteJob(Long id) {
+        jobRepository.deleteById(id);
+    }
+
+    public void deleteFeedback(String id) {
+        feedbackRepository.deleteById(id);
+    }
+
+    public void deleteContactMessage(String id) {
+        contactMessageRepository.deleteById(id);
     }
 }
