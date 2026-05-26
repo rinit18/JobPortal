@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,6 +39,18 @@ public class ConnectionAPI {
     @PostMapping("/reject/{requestId}")
     public ResponseEntity<Void> rejectRequest(@PathVariable Long requestId) throws JobPortalException {
         connectionService.rejectConnectionRequest(requestId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/withdraw/{senderId}/{receiverId}")
+    public ResponseEntity<Void> withdrawRequest(@PathVariable Long senderId, @PathVariable Long receiverId) throws JobPortalException {
+        connectionService.withdrawConnectionRequest(senderId, receiverId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/remove/{userId1}/{userId2}")
+    public ResponseEntity<Void> removeConnection(@PathVariable Long userId1, @PathVariable Long userId2) throws JobPortalException {
+        connectionService.removeConnection(userId1, userId2);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

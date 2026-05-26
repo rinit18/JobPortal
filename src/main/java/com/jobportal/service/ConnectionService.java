@@ -10,6 +10,8 @@ public interface ConnectionService {
     public ConnectionRequestDTO sendConnectionRequest(Long senderId, Long receiverId) throws JobPortalException;
     public ConnectionRequestDTO acceptConnectionRequest(Long requestId) throws JobPortalException;
     public void rejectConnectionRequest(Long requestId) throws JobPortalException;
+    public void withdrawConnectionRequest(Long senderId, Long receiverId) throws JobPortalException;
+    public void removeConnection(Long userId1, Long userId2) throws JobPortalException;
     public List<ConnectionRequestDTO> getPendingRequests(Long userId) throws JobPortalException;
     public List<ProfileDTO> getConnections(Long userId) throws JobPortalException;
     public List<ProfileDTO> getSuggestions(Long userId) throws JobPortalException;

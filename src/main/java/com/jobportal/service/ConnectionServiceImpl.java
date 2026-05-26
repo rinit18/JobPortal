@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.jobportal.dto.ConnectionRequestDTO;
 import com.jobportal.dto.ConnectionRequestStatus;
+import com.jobportal.dto.NotificationDTO;
 import com.jobportal.dto.ProfileDTO;
 import com.jobportal.entity.ConnectionRequest;
 import com.jobportal.entity.Profile;
@@ -32,6 +33,9 @@ public class ConnectionServiceImpl implements ConnectionService {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Override
     public ConnectionRequestDTO sendConnectionRequest(Long senderId, Long receiverId) throws JobPortalException {
         if (senderId.equals(receiverId)) throw new JobPortalException("Cannot send request to yourself");
@@ -45,6 +49,18 @@ public class ConnectionServiceImpl implements ConnectionService {
 
         ConnectionRequest req = new ConnectionRequest(Utilities.getNextSequenceId("connectionRequests"), senderId, receiverId, ConnectionRequestStatus.PENDING, LocalDateTime.now());
         req = connectionRequestRepository.save(req);
+
+        // Send Notification
+        Profile senderProfile = profileRepository.findById(senderId).orElse(null);
+        if (senderProfile != null) {
+            NotificationDTO noti = new NotificationDTO();
+            noti.setUserId(receiverId);
+            noti.setAction("New Connection Request");
+            noti.setMessage(senderProfile.getName() + " wants to connect with you.");
+            noti.setRoute("/network");
+            notificationService.sendNotification(noti);
+        }
+
         return req.toDTO();
     }
 
@@ -65,6 +81,15 @@ public class ConnectionServiceImpl implements ConnectionService {
         
         profileRepository.save(sender);
         profileRepository.save(receiver);
+
+        // Send Notification
+        NotificationDTO noti = new NotificationDTO();
+        noti.setUserId(req.getSenderId());
+        noti.setAction("Connection Request Accepted");
+        noti.setMessage(receiver.getName() + " accepted your connection request.");
+        noti.setRoute("/user/" + receiver.getId());
+        notificationService.sendNotification(noti);
+
         return req.toDTO();
     }
 
@@ -73,6 +98,34 @@ public class ConnectionServiceImpl implements ConnectionService {
         ConnectionRequest req = connectionRequestRepository.findById(requestId).orElseThrow(() -> new JobPortalException("Request not found"));
         req.setStatus(ConnectionRequestStatus.REJECTED);
         connectionRequestRepository.save(req);
+    }
+
+    @Override
+    public void withdrawConnectionRequest(Long senderId, Long receiverId) throws JobPortalException {
+        ConnectionRequest req = connectionRequestRepository.findBySenderIdAndReceiverId(senderId, receiverId)
+            .orElseThrow(() -> new JobPortalException("Request not found"));
+        if (req.getStatus() == ConnectionRequestStatus.PENDING) {
+            connectionRequestRepository.delete(req);
+        }
+    }
+
+    @Override
+    public void removeConnection(Long userId1, Long userId2) throws JobPortalException {
+        Profile p1 = profileRepository.findById(userId1).orElseThrow(() -> new JobPortalException("Profile 1 not found"));
+        Profile p2 = profileRepository.findById(userId2).orElseThrow(() -> new JobPortalException("Profile 2 not found"));
+
+        if (p1.getConnections() != null) {
+            p1.getConnections().remove(userId2);
+            profileRepository.save(p1);
+        }
+        if (p2.getConnections() != null) {
+            p2.getConnections().remove(userId1);
+            profileRepository.save(p2);
+        }
+        
+        // Also remove any existing requests so they can connect again later
+        connectionRequestRepository.findBySenderIdAndReceiverId(userId1, userId2).ifPresent(r -> connectionRequestRepository.delete(r));
+        connectionRequestRepository.findBySenderIdAndReceiverId(userId2, userId1).ifPresent(r -> connectionRequestRepository.delete(r));
     }
 
     @Override
