@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jobportal.dto.CommentDTO;
@@ -32,8 +33,11 @@ public class PostAPI {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<PostDTO>> getAllPosts() throws JobPortalException {
-        return new ResponseEntity<>(postService.getAllPosts(), HttpStatus.OK);
+    public ResponseEntity<List<PostDTO>> getAllPosts(@RequestParam(required = false) Long userId, @RequestParam(required = false, defaultValue = "Recent") String sort) throws JobPortalException {
+        if (userId == null) {
+            return new ResponseEntity<>(List.of(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(postService.getFeed(userId, sort), HttpStatus.OK);
     }
 
     @PostMapping("/like/{postId}/{profileId}")

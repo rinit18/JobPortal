@@ -13,6 +13,7 @@ import com.jobportal.dto.CommentDTO;
 import com.jobportal.dto.PostDTO;
 import com.jobportal.entity.Comment;
 import com.jobportal.entity.Post;
+import com.jobportal.entity.Profile;
 import com.jobportal.exception.JobPortalException;
 import com.jobportal.repository.PostRepository;
 import com.jobportal.repository.ProfileRepository;
@@ -42,9 +43,41 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostDTO> getAllPosts() throws JobPortalException {
-        List<Post> posts = postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
-        return posts.stream().map(p -> populateProfile(p.toDTO())).toList();
+    public List<PostDTO> getFeed(Long userId, String sortOption) throws JobPortalException {
+        Profile currentProfile = profileRepository.findById(userId).orElse(null);
+        List<Long> allowedAuthors = new ArrayList<>();
+        allowedAuthors.add(userId);
+        if (currentProfile != null && currentProfile.getConnections() != null) {
+            allowedAuthors.addAll(currentProfile.getConnections());
+        }
+
+        List<Post> posts = postRepository.findAll();
+        
+        // Filter by connections
+        List<Post> filtered = posts.stream()
+            .filter(p -> p.getProfileId() != null && allowedAuthors.contains(p.getProfileId()))
+            .collect(java.util.stream.Collectors.toList());
+
+        // Sort
+        if ("Top".equalsIgnoreCase(sortOption)) {
+            filtered.sort((p1, p2) -> {
+                int score1 = (p1.getLikedBy() != null ? p1.getLikedBy().size() : 0) + (p1.getComments() != null ? p1.getComments().size() : 0);
+                int score2 = (p2.getLikedBy() != null ? p2.getLikedBy().size() : 0) + (p2.getComments() != null ? p2.getComments().size() : 0);
+                if (score1 == score2) {
+                    if (p1.getCreatedAt() != null && p2.getCreatedAt() != null) return p2.getCreatedAt().compareTo(p1.getCreatedAt());
+                    return 0;
+                }
+                return Integer.compare(score2, score1);
+            });
+        } else {
+            // Recent
+            filtered.sort((p1, p2) -> {
+                if (p1.getCreatedAt() != null && p2.getCreatedAt() != null) return p2.getCreatedAt().compareTo(p1.getCreatedAt());
+                return 0;
+            });
+        }
+
+        return filtered.stream().map(p -> populateProfile(p.toDTO())).toList();
     }
 
     @Override
@@ -75,10 +108,14 @@ public class PostServiceImpl implements PostService {
     }
 
     private PostDTO populateProfile(PostDTO dto) {
-        profileRepository.findById(dto.getProfileId()).ifPresent(p -> dto.setProfile(p.toDTO()));
+        if (dto.getProfileId() != null) {
+            profileRepository.findById(dto.getProfileId()).ifPresent(p -> dto.setProfile(p.toDTO()));
+        }
         if (dto.getComments() != null) {
             dto.getComments().forEach(c -> {
-                profileRepository.findById(c.getProfileId()).ifPresent(p -> c.setProfile(p.toDTO()));
+                if (c.getProfileId() != null) {
+                    profileRepository.findById(c.getProfileId()).ifPresent(p -> c.setProfile(p.toDTO()));
+                }
             });
         }
         return dto;

@@ -16,6 +16,8 @@ import com.jobportal.entity.Profile;
 import com.jobportal.exception.JobPortalException;
 import com.jobportal.repository.ConnectionRequestRepository;
 import com.jobportal.repository.ProfileRepository;
+import com.jobportal.repository.PostRepository;
+import com.jobportal.entity.Post;
 import com.jobportal.utility.Utilities;
 
 @Service("connectionService")
@@ -26,6 +28,9 @@ public class ConnectionServiceImpl implements ConnectionService {
     
     @Autowired
     private ProfileRepository profileRepository;
+
+    @Autowired
+    private PostRepository postRepository;
 
     @Override
     public ConnectionRequestDTO sendConnectionRequest(Long senderId, Long receiverId) throws JobPortalException {
@@ -106,5 +111,23 @@ public class ConnectionServiceImpl implements ConnectionService {
             .limit(10)
             .map(Profile::toDTO)
             .toList();
+    }
+
+    @Override
+    public void generateMockData() throws JobPortalException {
+        long c = profileRepository.count();
+        if (c > 3) return; // already have data
+
+        Profile p1 = new Profile(Utilities.getNextSequenceId("profiles"), "Alice Johnson", "alice@test.com", "Frontend Developer", "Google", "California, USA", "Passionate about UI/UX", null, 4L, List.of("React", "CSS"), null, null, null, new ArrayList<>());
+        Profile p2 = new Profile(Utilities.getNextSequenceId("profiles"), "Bob Smith", "bob@test.com", "Data Scientist", "Amazon", "Seattle, USA", "Love working with data.", null, 2L, List.of("Python", "SQL"), null, null, null, new ArrayList<>());
+        Profile p3 = new Profile(Utilities.getNextSequenceId("profiles"), "Charlie Davis", "charlie@test.com", "Product Manager", "Microsoft", "Redmond, USA", "Building great products.", null, 6L, List.of("Agile", "Jira"), null, null, null, new ArrayList<>());
+
+        profileRepository.saveAll(List.of(p1, p2, p3));
+
+        Post post1 = new Post(Utilities.getNextSequenceId("posts"), p1.getId(), "Just started my new job at Google! So excited for the journey ahead.", null, new ArrayList<>(), new ArrayList<>(), LocalDateTime.now().minusHours(2));
+        Post post2 = new Post(Utilities.getNextSequenceId("posts"), p2.getId(), "Does anyone have good recommendations for learning advanced PySpark? Looking to upskill.", null, new ArrayList<>(), new ArrayList<>(), LocalDateTime.now().minusHours(5));
+        Post post3 = new Post(Utilities.getNextSequenceId("posts"), p3.getId(), "Product Management is 10% having ideas and 90% convincing others to build them.", null, new ArrayList<>(), new ArrayList<>(), LocalDateTime.now().minusDays(1));
+
+        postRepository.saveAll(List.of(post1, post2, post3));
     }
 }

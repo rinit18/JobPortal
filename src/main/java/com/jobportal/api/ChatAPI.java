@@ -72,7 +72,11 @@ public class ChatAPI {
             return new ResponseEntity<>(existingRoom.get(), HttpStatus.OK);
         }
 
-        // Create new chat room and fetch participant profiles for names/roles
+        // Validate Connection
+        Optional<Profile> senderProfile = profileRepository.findById(senderId);
+        if (senderProfile.isEmpty() || senderProfile.get().getConnections() == null || !senderProfile.get().getConnections().contains(recipientId)) {
+            throw new RuntimeException("You can only message your connections.");
+        }
         ChatRoom room = new ChatRoom();
         room.setId(roomId);
         room.setUser1Id(senderId);

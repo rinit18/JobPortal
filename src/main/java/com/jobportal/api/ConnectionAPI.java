@@ -55,4 +55,10 @@ public class ConnectionAPI {
     public ResponseEntity<List<ProfileDTO>> getSuggestions(@PathVariable Long userId) throws JobPortalException {
         return new ResponseEntity<>(connectionService.getSuggestions(userId), HttpStatus.OK);
     }
+
+    @PostMapping("/mock")
+    public ResponseEntity<String> generateMockData() throws JobPortalException {
+        connectionService.generateMockData();
+        return new ResponseEntity<>("Mock data generated successfully", HttpStatus.OK);
+    }
 }

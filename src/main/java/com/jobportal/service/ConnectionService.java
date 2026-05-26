@@ -13,4 +13,5 @@ public interface ConnectionService {
     public List<ConnectionRequestDTO> getPendingRequests(Long userId) throws JobPortalException;
     public List<ProfileDTO> getConnections(Long userId) throws JobPortalException;
     public List<ProfileDTO> getSuggestions(Long userId) throws JobPortalException;
+    public void generateMockData() throws JobPortalException;
 }

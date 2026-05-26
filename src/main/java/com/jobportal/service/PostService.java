@@ -8,7 +8,7 @@ import com.jobportal.exception.JobPortalException;
 
 public interface PostService {
     public PostDTO createPost(PostDTO postDTO) throws JobPortalException;
-    public List<PostDTO> getAllPosts() throws JobPortalException;
+    public List<PostDTO> getFeed(Long userId, String sortOption) throws JobPortalException;
     public PostDTO likePost(Long postId, Long profileId) throws JobPortalException;
     public PostDTO addComment(Long postId, CommentDTO commentDTO) throws JobPortalException;
 }
