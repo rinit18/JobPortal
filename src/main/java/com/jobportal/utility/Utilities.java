@@ -13,7 +13,10 @@ import org.springframework.stereotype.Component;
 import com.jobportal.entity.Sequence;
 import com.jobportal.exception.JobPortalException;
 
+import org.springframework.context.annotation.Lazy;
+
 @Component
+@Lazy(false)
 public class Utilities {
 	private static MongoOperations mongoOperation;
 
