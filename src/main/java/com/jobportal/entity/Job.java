@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.jobportal.dto.JobDTO;
@@ -32,7 +33,9 @@ public class Job {
     private LocalDateTime postTime;
     private String description;
     private List<String> skillsRequired;
+    @Indexed
     private JobStatus jobStatus;
+    @Indexed
     private Long postedBy;
     
     public JobDTO toDTO() {
