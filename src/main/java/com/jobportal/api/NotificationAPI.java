@@ -28,7 +28,7 @@ public class NotificationAPI {
 	
 	@GetMapping("/get/{userId}")
 	public ResponseEntity<List<Notification>>getNotifications(@PathVariable Long userId){
-		return new ResponseEntity<>(notificationService.getUnreadNotifications(userId), HttpStatus.OK);
+		return new ResponseEntity<>(notificationService.getNotifications(userId), HttpStatus.OK);
 	}
 	@PutMapping("/read/{id}")
 	public ResponseEntity<ResponseDTO>readNotification(@PathVariable Long id) throws JobPortalException{

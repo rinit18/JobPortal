@@ -9,4 +9,5 @@ import com.jobportal.entity.Notification;
 
 public interface NotificationRepository extends MongoRepository<Notification, Long> {
 	public List<Notification> findByUserIdAndStatus(Long userId, NotificationStatus status);
+	public List<Notification> findByUserIdOrderByTimestampDesc(Long userId);
 }
