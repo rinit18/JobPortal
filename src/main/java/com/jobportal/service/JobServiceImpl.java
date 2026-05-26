@@ -60,7 +60,10 @@ public class JobServiceImpl implements JobService {
 	
 	@Override
 	public List<JobDTO> getAllJobs() throws JobPortalException {
-		return jobRepository.findByJobStatus(JobStatus.ACTIVE).stream().map((x) -> x.toDTO()).toList();
+		return jobRepository.findByJobStatus(JobStatus.ACTIVE).stream()
+				.map(Job::toDTO)
+				.map(this::sanitizeJobDTO)
+				.toList();
 	}
 
 	@Override
@@ -74,6 +77,7 @@ public class JobServiceImpl implements JobService {
 				return false;
 			})
 			.map(Job::toDTO)
+			.map(this::sanitizeJobDTO)
 			.toList();
 	}
 
@@ -82,7 +86,7 @@ public class JobServiceImpl implements JobService {
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Job> jobPage = jobRepository.findByJobStatus(JobStatus.ACTIVE, pageable);
 		Map<String, Object> response = new HashMap<>();
-		response.put("jobs", jobPage.getContent().stream().map(Job::toDTO).toList());
+		response.put("jobs", jobPage.getContent().stream().map(Job::toDTO).map(this::sanitizeJobDTO).toList());
 		response.put("totalElements", jobPage.getTotalElements());
 		response.put("totalPages", jobPage.getTotalPages());
 		response.put("currentPage", jobPage.getNumber());
@@ -92,7 +96,8 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public JobDTO getJob(Long id) throws JobPortalException {
-		return jobRepository.findById(id).orElseThrow(() -> new JobPortalException("JOB_NOT_FOUND")).toDTO();
+		JobDTO dto = jobRepository.findById(id).orElseThrow(() -> new JobPortalException("JOB_NOT_FOUND")).toDTO();
+		return sanitizeJobDTO(dto);
 	}
 
 	@Override
@@ -173,6 +178,27 @@ public class JobServiceImpl implements JobService {
 		job.setApplicants(apps);
 		jobRepository.save(job);
 		
+	}
+
+	private JobDTO sanitizeJobDTO(JobDTO dto) {
+		if (dto.getApplicants() != null) {
+			dto.getApplicants().forEach(app -> {
+				app.setResume(null);
+				app.setEmail(null);
+				app.setPhone(null);
+				app.setWebsite(null);
+				app.setName("Applicant");
+			});
+		}
+		return dto;
+	}
+
+	@Override
+	public List<JobDTO> getSavedJobs(List<Long> jobIds) throws JobPortalException {
+		return ((List<Job>) jobRepository.findAllById(jobIds)).stream()
+				.map(Job::toDTO)
+				.map(this::sanitizeJobDTO)
+				.toList();
 	}
 
 }

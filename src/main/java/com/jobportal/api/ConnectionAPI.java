@@ -69,6 +69,11 @@ public class ConnectionAPI {
         return new ResponseEntity<>(connectionService.getSuggestions(userId), HttpStatus.OK);
     }
 
+    @GetMapping("/status/{currentUserId}/{targetUserId}")
+    public ResponseEntity<String> getConnectionStatus(@PathVariable Long currentUserId, @PathVariable Long targetUserId) throws JobPortalException {
+        return new ResponseEntity<>(connectionService.getConnectionStatus(currentUserId, targetUserId), HttpStatus.OK);
+    }
+
     @PostMapping("/mock")
     public ResponseEntity<String> generateMockData() throws JobPortalException {
         connectionService.generateMockData();

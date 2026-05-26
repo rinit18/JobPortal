@@ -67,9 +67,14 @@ public class JobAPI {
 		return new ResponseEntity<>(jobService.getJobsPage(page, size), HttpStatus.OK);
 	}
 
-	@GetMapping("/get/{id}")
-	public ResponseEntity<JobDTO>getJob(@PathVariable Long id) throws JobPortalException{
+	@GetMapping("/{id}")
+	public ResponseEntity<JobDTO> getJob(@PathVariable Long id) throws JobPortalException {
 		return new ResponseEntity<>(jobService.getJob(id), HttpStatus.OK);
+	}
+
+	@PostMapping("/saved")
+	public ResponseEntity<List<JobDTO>> getSavedJobs(@RequestBody List<Long> jobIds) throws JobPortalException {
+		return new ResponseEntity<>(jobService.getSavedJobs(jobIds), HttpStatus.OK);
 	}
 	@PostMapping("apply/{id}")
 	public ResponseEntity<ResponseDTO>applyJob(@PathVariable Long id, @RequestBody ApplicantDTO applicantDTO) throws JobPortalException{

@@ -115,11 +115,11 @@ public class ConnectionServiceImpl implements ConnectionService {
         Profile p2 = profileRepository.findById(userId2).orElseThrow(() -> new JobPortalException("Profile 2 not found"));
 
         if (p1.getConnections() != null) {
-            p1.getConnections().remove(userId2);
+            p1.getConnections().removeIf(id -> id.equals(userId2));
             profileRepository.save(p1);
         }
         if (p2.getConnections() != null) {
-            p2.getConnections().remove(userId1);
+            p2.getConnections().removeIf(id -> id.equals(userId1));
             profileRepository.save(p2);
         }
         
@@ -171,9 +171,9 @@ public class ConnectionServiceImpl implements ConnectionService {
         long c = profileRepository.count();
         if (c > 3) return; // already have data
 
-        Profile p1 = new Profile(Utilities.getNextSequenceId("profiles"), "Alice Johnson", "alice@test.com", "Frontend Developer", "Google", "California, USA", "Passionate about UI/UX", null, 4L, List.of("React", "CSS"), null, null, null, new ArrayList<>());
-        Profile p2 = new Profile(Utilities.getNextSequenceId("profiles"), "Bob Smith", "bob@test.com", "Data Scientist", "Amazon", "Seattle, USA", "Love working with data.", null, 2L, List.of("Python", "SQL"), null, null, null, new ArrayList<>());
-        Profile p3 = new Profile(Utilities.getNextSequenceId("profiles"), "Charlie Davis", "charlie@test.com", "Product Manager", "Microsoft", "Redmond, USA", "Building great products.", null, 6L, List.of("Agile", "Jira"), null, null, null, new ArrayList<>());
+        Profile p1 = new Profile(Utilities.getNextSequenceId("profiles"), "Alice Johnson", "alice@test.com", "Frontend Developer", "Google", "California, USA", "Passionate about UI/UX", null, null, 4L, List.of("React", "CSS"), null, null, null, new ArrayList<>());
+        Profile p2 = new Profile(Utilities.getNextSequenceId("profiles"), "Bob Smith", "bob@test.com", "Data Scientist", "Amazon", "Seattle, USA", "Love working with data.", null, null, 2L, List.of("Python", "SQL"), null, null, null, new ArrayList<>());
+        Profile p3 = new Profile(Utilities.getNextSequenceId("profiles"), "Charlie Davis", "charlie@test.com", "Product Manager", "Microsoft", "Redmond, USA", "Building great products.", null, null, 6L, List.of("Agile", "Jira"), null, null, null, new ArrayList<>());
 
         profileRepository.saveAll(List.of(p1, p2, p3));
 
@@ -182,5 +182,18 @@ public class ConnectionServiceImpl implements ConnectionService {
         Post post3 = new Post(Utilities.getNextSequenceId("posts"), p3.getId(), "Product Management is 10% having ideas and 90% convincing others to build them.", null, new ArrayList<>(), new ArrayList<>(), LocalDateTime.now().minusDays(1));
 
         postRepository.saveAll(List.of(post1, post2, post3));
+    }
+
+    @Override
+    public String getConnectionStatus(Long currentUserId, Long targetUserId) throws JobPortalException {
+        Profile profile = profileRepository.findById(currentUserId).orElseThrow(() -> new JobPortalException("Profile not found"));
+        if (profile.getConnections() != null && profile.getConnections().stream().anyMatch(id -> id.equals(targetUserId))) {
+            return "CONNECTED";
+        }
+        Optional<ConnectionRequest> sent = connectionRequestRepository.findBySenderIdAndReceiverId(currentUserId, targetUserId);
+        if (sent.isPresent() && sent.get().getStatus() == ConnectionRequestStatus.PENDING) return "PENDING_SENT";
+        Optional<ConnectionRequest> received = connectionRequestRepository.findBySenderIdAndReceiverId(targetUserId, currentUserId);
+        if (received.isPresent() && received.get().getStatus() == ConnectionRequestStatus.PENDING) return "PENDING_RECEIVED";
+        return "NONE";
     }
 }

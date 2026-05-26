@@ -33,6 +33,7 @@ public interface JobService {
 
 	public void changeAppStatus(Application application) throws JobPortalException;
 	
+	public List<JobDTO> getSavedJobs(List<Long> jobIds) throws JobPortalException;
 	
 
 }

@@ -17,7 +17,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Document(collection = "notification")
 public class Notification {
+	@org.springframework.data.annotation.Id
 	private Long id;
+	@org.springframework.data.mongodb.core.index.Indexed
 	private Long userId;
 	private String message;
 	private String action;
