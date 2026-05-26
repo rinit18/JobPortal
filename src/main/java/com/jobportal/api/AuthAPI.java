@@ -36,8 +36,12 @@ public class AuthAPI {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            throw new JobPortalException("Password didn't match");
+        } catch (org.springframework.security.authentication.InternalAuthenticationServiceException e) {
+            throw new JobPortalException("Email ID didn't match");
         } catch (AuthenticationException e) {
-            throw new JobPortalException("Incorrect username or password");
+            throw new JobPortalException("Authentication Failed");
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
