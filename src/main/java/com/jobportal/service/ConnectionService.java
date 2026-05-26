@@ -14,8 +14,7 @@ public interface ConnectionService {
     public void removeConnection(Long userId1, Long userId2) throws JobPortalException;
     public List<ConnectionRequestDTO> getPendingRequests(Long userId) throws JobPortalException;
     public List<ProfileDTO> getConnections(Long userId) throws JobPortalException;
-    public List<ProfileDTO> getSuggestions(Long userId) throws JobPortalException;
-    public void generateMockData() throws JobPortalException;
-    // Returns: "CONNECTED", "PENDING_SENT", "PENDING_RECEIVED", "NONE"
-    public String getConnectionStatus(Long currentUserId, Long targetUserId) throws JobPortalException;
+    public    List<ProfileDTO> getSuggestions(Long userId) throws JobPortalException;
+    void generateMockData(Long userId) throws JobPortalException;
+    String getConnectionStatus(Long currentUserId, Long targetUserId) throws JobPortalException;
 }

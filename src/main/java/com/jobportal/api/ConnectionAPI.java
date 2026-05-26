@@ -74,9 +74,9 @@ public class ConnectionAPI {
         return new ResponseEntity<>(connectionService.getConnectionStatus(currentUserId, targetUserId), HttpStatus.OK);
     }
 
-    @PostMapping("/mock")
-    public ResponseEntity<String> generateMockData() throws JobPortalException {
-        connectionService.generateMockData();
+    @PostMapping("/mock/{userId}")
+    public ResponseEntity<String> generateMockData(@PathVariable Long userId) throws JobPortalException {
+        connectionService.generateMockData(userId);
         return new ResponseEntity<>("Mock data generated successfully", HttpStatus.OK);
     }
 }

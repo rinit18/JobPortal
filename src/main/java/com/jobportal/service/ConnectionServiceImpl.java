@@ -167,21 +167,29 @@ public class ConnectionServiceImpl implements ConnectionService {
     }
 
     @Override
-    public void generateMockData() throws JobPortalException {
-        long c = profileRepository.count();
-        if (c > 3) return; // already have data
-
+    public void generateMockData(Long userId) throws JobPortalException {
+        // Always generate a few mock profiles for testing
         Profile p1 = new Profile(Utilities.getNextSequenceId("profiles"), "Alice Johnson", "alice@test.com", "Frontend Developer", "Google", "California, USA", "Passionate about UI/UX", null, null, 4L, List.of("React", "CSS"), null, null, null, new ArrayList<>());
         Profile p2 = new Profile(Utilities.getNextSequenceId("profiles"), "Bob Smith", "bob@test.com", "Data Scientist", "Amazon", "Seattle, USA", "Love working with data.", null, null, 2L, List.of("Python", "SQL"), null, null, null, new ArrayList<>());
         Profile p3 = new Profile(Utilities.getNextSequenceId("profiles"), "Charlie Davis", "charlie@test.com", "Product Manager", "Microsoft", "Redmond, USA", "Building great products.", null, null, 6L, List.of("Agile", "Jira"), null, null, null, new ArrayList<>());
 
         profileRepository.saveAll(List.of(p1, p2, p3));
 
+        // Generate posts from mock users
         Post post1 = new Post(Utilities.getNextSequenceId("posts"), p1.getId(), "Just started my new job at Google! So excited for the journey ahead.", null, new ArrayList<>(), new ArrayList<>(), LocalDateTime.now().minusHours(2));
         Post post2 = new Post(Utilities.getNextSequenceId("posts"), p2.getId(), "Does anyone have good recommendations for learning advanced PySpark? Looking to upskill.", null, new ArrayList<>(), new ArrayList<>(), LocalDateTime.now().minusHours(5));
         Post post3 = new Post(Utilities.getNextSequenceId("posts"), p3.getId(), "Product Management is 10% having ideas and 90% convincing others to build them.", null, new ArrayList<>(), new ArrayList<>(), LocalDateTime.now().minusDays(1));
 
         postRepository.saveAll(List.of(post1, post2, post3));
+
+        // Generate a pending connection request directed at the current user
+        if (userId != null) {
+            Optional<ConnectionRequest> reqExists = connectionRequestRepository.findBySenderIdAndReceiverId(p1.getId(), userId);
+            if (reqExists.isEmpty()) {
+                ConnectionRequest req = new ConnectionRequest(Utilities.getNextSequenceId("connectionRequests"), p1.getId(), userId, ConnectionRequestStatus.PENDING, LocalDateTime.now());
+                connectionRequestRepository.save(req);
+            }
+        }
     }
 
     @Override
