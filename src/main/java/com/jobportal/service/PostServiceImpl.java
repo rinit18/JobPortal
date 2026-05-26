@@ -58,6 +58,11 @@ public class PostServiceImpl implements PostService {
             .filter(p -> p.getProfileId() != null && allowedAuthors.contains(p.getProfileId()))
             .collect(java.util.stream.Collectors.toList());
 
+        // Fallback to global feed if empty
+        if (filtered.isEmpty()) {
+            filtered = new ArrayList<>(posts);
+        }
+
         // Sort
         if ("Top".equalsIgnoreCase(sortOption)) {
             filtered.sort((p1, p2) -> {
