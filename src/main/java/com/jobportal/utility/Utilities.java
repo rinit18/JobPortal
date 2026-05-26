@@ -83,6 +83,16 @@ public class Utilities {
 					wordMatched = true;
 					break;
 				}
+				if (qWord.length() > 3 && word.length() > 3) {
+					String wordCons = word.replaceAll("[aeiou]", "");
+					String qWordCons = qWord.replaceAll("[aeiou]", "");
+					if (wordCons.length() > 0 && qWordCons.length() > 0) {
+						if (wordCons.contains(qWordCons) || calculateLevenshteinDistance(wordCons, qWordCons) <= 1) {
+							wordMatched = true;
+							break;
+						}
+					}
+				}
 			}
 			if (!wordMatched) return false;
 		}
