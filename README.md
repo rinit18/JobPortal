@@ -1,119 +1,114 @@
-# CareerConnect Backend Architecture
+# CareerConnect - Backend API Architecture
 
-The robust Spring Boot REST API powering the CareerConnect platform. It provides a highly secure, scalable, and intelligent foundation for the entire job portal ecosystem.
+CareerConnect is a modern, high-performance job portal designed to connect premium tech talent with innovative companies. The backend is built using a robust, scalable N-Tier architecture driven by **Spring Boot 3** and **MongoDB**, acting as the central nervous system for data persistence, security, AI processing, and real-time messaging.
 
 ## 🌟 Comprehensive Feature Set
 
-- **Secure Authentication & Authorization:** 
-  - Stateless session management using **JWT (JSON Web Tokens)**.
-  - Implements **Spring Security Filter Chains** to intercept and validate requests.
-  - Features secure email-based **OTP (One Time Password)** verification for account creation, login, and password resets using Spring Mail.
-- **AI-Powered Data Extraction:** 
-  - Integrates the **Gemini AI API** directly into the application layer.
-  - Utilizes **Apache PDFBox** to read uploaded resume PDFs, sending the raw text to the AI to intelligently extract structured data (skills, experience, education, contact info) directly into the user's profile.
-- **Advanced Rate Limiting:** 
-  - Implements **Bucket4j** to protect sensitive and expensive endpoints. 
-  - Prevents brute-force login attacks and abuse of the OTP generation system by capping requests per IP address.
-- **Real-Time Messaging API:** 
-  - Dedicated endpoints for creating dynamic chat rooms between applicants and recruiters.
-  - Manages message histories, timestamps, and read receipts.
+### 1. Robust Authentication & Security
+- **JWT (JSON Web Token):** Stateless authentication. Users are verified via tokens on every secure request, minimizing database load.
+- **OTP Verification Engine:** Secure email-based OTP (One Time Password) login and signup flow via `JavaMailSender`. Password resets also require OTP validation to generate secure reset tokens.
+- **Spring Security:** Strict method-level and route-level security, ensuring applicants cannot modify company job postings and unauthorized users cannot access private messages.
+- **Rate Limiting:** Protects against Brute Force and Spam attacks using `Bucket4j`. Login attempts are limited to 10 per hour, and OTP requests are limited to 3 per hour per email address.
+
+### 2. Intelligent AI Integrations (Powered by Groq API)
+- **AI Match Score Generator:** Takes an applicant's entire profile summary and a job description, sending them to the Groq LLM API to return a precise match score, specific strengths, and areas for improvement.
+- **Resume Parsing Engine:** Extracts plain text from uploaded PDFs using `Apache PDFBox` and leverages the LLM to parse unstructured text into highly structured JSON (`skills`, `experiences`, `jobTitle`).
+- **AI Job Summarizer:** Automatically condenses lengthy, complex job descriptions into bite-sized, readable summaries.
+
+### 3. Core Domain Capabilities
+- **Job Management:** CRUD operations for Job Postings. Employers can publish, edit, and close jobs. Applicants can search for jobs, filter by skills, and apply directly.
+- **Profile Management:** Comprehensive tracking of a user's `skills`, `certifications`, `experiences`, and saved/applied jobs.
+- **Messaging Engine:** Powers the real-time chat feature. Creates secure chat rooms between Employers and Applicants, persists message histories, and tracks the last active timestamps.
+- **Search & Filtering:** Complex MongoDB aggregation pipelines support natural language filtering or strict parameter matching for job and talent searches.
 
 ## 🛠️ Technology Stack
 
-- **Framework:** Java 17, Spring Boot 3.3.x
-- **Database:** MongoDB (via Spring Data MongoDB)
-- **Security:** Spring Security, JWT (`jjwt` 0.11.5), BCrypt
-- **Rate Limiting:** Bucket4j
-- **Email Delivery:** Spring Boot Starter Mail (SMTP)
-- **PDF Processing:** Apache PDFBox 3.0.2
-- **Boilerplate Reduction:** Project Lombok
+- **Framework:** Spring Boot 3.3.2
+- **Language:** Java 17
+- **Database:** MongoDB (Spring Data MongoDB)
+- **Security:** Spring Security, JJWT (io.jsonwebtoken)
+- **Rate Limiting:** Bucket4j (`com.bucket4j`)
+- **Email Service:** Spring Boot Starter Mail (`JavaMailSender`)
+- **PDF Extraction:** Apache PDFBox 3.0.2
+- **Lombok:** Reduces boilerplate code (`@Data`, `@NoArgsConstructor`).
 
 ---
 
-## 🗄️ Database Architecture & Connection
+## 🏗️ Architecture & Design Patterns
 
-CareerConnect uses **MongoDB**, a NoSQL document database, which is ideal for the flexible, nested data structures required for User Profiles and complex Job Listings.
+The backend follows a strict **N-Tier (Layered) Architecture**:
 
-### How the Database is Connected
-The connection is established using the **Spring Data MongoDB** starter. Spring Boot auto-configures the `MongoClient` based on the URI provided in the `application.properties` file.
-
-1. **Connection String:** 
-   The application looks for the `spring.data.mongodb.uri` property. This can point to a local instance (`mongodb://localhost:27017/JobPortal`) or a cloud-hosted cluster like MongoDB Atlas.
-2. **Entity Mapping:**
-   Java classes in the `entity` package are mapped directly to MongoDB collections using annotations:
-   - `@Document(collection = "users")` maps the `User` class to the `users` collection.
-   - `@Id` marks the primary key, which MongoDB automatically generates as an `ObjectId` if left null during insertion.
-3. **Repositories:**
-   The `repository` package contains interfaces that extend `MongoRepository<Entity, ID>`. Spring Data automatically generates the implementation for these interfaces at runtime, providing instant access to CRUD operations (e.g., `jobRepository.findByJobStatus(JobStatus.ACTIVE)`).
+1. **Controllers (`src/main/java/com/jobportal/api/`):** 
+   - Defines REST endpoints.
+   - Handles incoming HTTP requests and standardizes responses (`ResponseEntity`).
+2. **Services (`src/main/java/com/jobportal/service/`):** 
+   - Contains all business logic (e.g., AI score calculation, rate limit enforcement).
+   - Abstractions ensure controllers remain lightweight.
+3. **Repositories (`src/main/java/com/jobportal/repository/`):** 
+   - Data Access Layer using `MongoRepository`.
+   - Handles custom `@Query` definitions and database interactions.
+4. **Entities / DTOs (`src/main/java/com/jobportal/entity/` & `dto/`):** 
+   - Represents the MongoDB document schemas (`User`, `JobPost`, `Profile`).
+   - DTOs (Data Transfer Objects) are used to transfer data between the client and server without exposing internal database structures.
+5. **Security & JWT Configurations (`src/main/java/com/jobportal/jwt/`):** 
+   - Contains the `JwtAuthenticationFilter` that intercepts requests, validates the Bearer token, and populates the `SecurityContext`.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Java 17+ installed
-- Maven 3.8+ installed
-- A running MongoDB instance (Local or Atlas)
-- An SMTP Email Account (e.g., Gmail App Password)
-- A Gemini AI API Key
+- Java 17 (JDK 17)
+- Maven 3.8+
+- A MongoDB Cluster (Local or MongoDB Atlas)
+- Groq API Key (for AI features)
+- Gmail App Password (for OTP emails)
 
-### Configuration
+### Installation & Configuration
 
-Create or modify `src/main/resources/application.properties`. This file is the central configuration hub for your backend:
-
-```properties
-# MongoDB Configuration - Crucial for connecting to your Database
-spring.data.mongodb.uri=mongodb+srv://<username>:<password>@cluster.mongodb.net/JobPortal?retryWrites=true&w=majority
-
-# JWT Security - Used to sign and verify tokens
-jwt.secret=YOUR_SUPER_SECRET_256_BIT_KEY_HERE_MAKE_IT_LONG
-
-# Email Configuration (SMTP) - Required for OTP functionality
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your-email@gmail.com
-spring.mail.password=your-app-password
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-
-# AI Service Configuration - Required for Resume Parsing
-ai.api.key=YOUR_GEMINI_API_KEY
-```
-
-### Installation & Running
-
-1. Navigate to the backend directory:
+1. **Clone & Navigate:**
    ```bash
+   git clone <repository-url>
    cd backend
    ```
-2. Clean and compile the project using Maven to download all dependencies:
+2. **Configure Environment Variables:**
+   You must provide the following environment variables or configure them directly in `src/main/resources/application.properties`:
+   - `MONGO_PASSWORD`: Your MongoDB connection password.
+   - `EMAIL_USERNAME`: The Gmail address used to send OTPs.
+   - `EMAIL_PASSWORD`: The 16-character Google App Password.
+   - `GROQ_API_KEY`: Your free Groq LLM API Key.
+   - *Optional:* `PORT` (defaults to 8080).
+
+   > **Note on Windows IPv6:** 
+   > The application uses `System.setProperty("java.net.preferIPv4Stack", "true");` in the main class to prevent SMTP connection timeouts common on Windows IPv6 configurations.
+
+3. **Install Dependencies & Build:**
    ```bash
-   mvn clean install
+   mvn clean install -DskipTests
    ```
-3. Run the Spring Boot application:
+4. **Run the Server:**
    ```bash
    mvn spring-boot:run
    ```
-4. The server will start on `http://localhost:8080`.
+5. The backend will start on `http://localhost:8080`.
 
 ---
 
-## 📂 Codebase Structure
+## 🔒 API Security & Access
 
-The backend strictly adheres to a robust **N-Tier Architecture**:
+All endpoints outside of `/users/login`, `/users/sendOtp`, and `/users/register` are secured. 
+Clients must include the Authorization header to interact with protected resources:
+```http
+Authorization: Bearer <your_jwt_token_here>
+```
 
-- **`api/` (Controllers):** The entry points for HTTP requests. They define endpoints (e.g., `@GetMapping("/jobs")`), handle request parameters, and return `ResponseEntity` objects. They *do not* contain business logic.
-- **`service/`:** The heart of the application. Contains core business logic, validations, and orchestrates calls to various repositories or external APIs (like the Gemini API).
-- **`repository/`:** The Data Access Layer. Interfaces extending `MongoRepository` for direct database interactions without writing raw queries.
-- **`entity/`:** The Domain Layer. MongoDB document models mapping exactly to how data is stored in the database.
-- **`dto/` (Data Transfer Objects):** Crucial for security and performance. DTOs shape the JSON payloads sent to and from the frontend, ensuring internal entity structures are never directly exposed to clients.
-- **`jwt/`:** Contains the `JwtAuthenticationFilter` which intercepts every incoming request, validates the JWT token from the `Authorization` header, and populates the `SecurityContext`.
-- **`exception/`:** Custom exception classes (e.g., `JobPortalException`) allowing for structured, predictable error responses to the frontend.
-- **`utility/`:** Helper classes for tasks like generating 6-digit OTPs or formatting validation responses.
+## 📦 Build for Production (Deployment)
 
-## 🔐 Security Flow Overview
-1. User requests OTP via `/users/sendOtp`. Bucket4j checks if they have exceeded their rate limit.
-2. User submits OTP to login/register.
-3. Backend verifies OTP, generates a JWT using the `jwt.secret`, and returns it.
-4. Frontend attaches `Bearer <token>` to all subsequent requests.
-5. `JwtAuthenticationFilter` intercepts the request, verifies the signature, and allows it to reach the `api/` controllers.
+To package the Spring Boot application into a standalone, executable JAR:
+```bash
+mvn clean package -DskipTests
+```
+The output JAR will be placed in the `target/` directory. You can deploy this JAR to Render, AWS EC2, or any Dockerized container service:
+```bash
+java -jar target/JobPortal-0.0.1-SNAPSHOT.jar
+```

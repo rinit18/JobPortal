@@ -54,4 +54,15 @@ public class AiAPI {
         String result = aiService.parseSearchQuery(query);
         return ResponseEntity.ok(result);
     }
+    /**
+     * POST /ai/chat
+     * Body: { "message": "..." }
+     * Returns: { "message": "..." }
+     */
+    @PostMapping("/chat")
+    public ResponseEntity<Map<String, String>> chatBot(@RequestBody Map<String, String> request) {
+        String message = request.getOrDefault("message", "");
+        String result = aiService.chatBot(message);
+        return new ResponseEntity<>(Map.of("message", result), HttpStatus.OK);
+    }
 }

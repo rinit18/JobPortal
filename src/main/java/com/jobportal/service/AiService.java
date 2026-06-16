@@ -92,6 +92,20 @@ public class AiService {
     }
 
     /**
+     * Chatbot endpoint for CareerConnect.
+     */
+    public String chatBot(String userMessage) {
+        String prompt = String.format(
+            "You are the official CareerConnect support bot. CareerConnect is a premium job portal connecting tech talent with companies. " +
+            "Features include: AI match scoring, PDF resume parsing, real-time messaging, finding jobs with natural language search, and interactive profiles. " +
+            "Respond to the user concisely, professionally, and helpfully. Do not use Markdown formatting, just return plain text. " +
+            "USER MESSAGE: \"%s\"",
+            userMessage.replace("\"", "'")
+        );
+        return callGroq(prompt, false);
+    }
+
+    /**
      * Calls the Groq OpenAI-compatible API and returns the generated text.
      */
     private String callGroq(String prompt) {
