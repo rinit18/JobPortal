@@ -98,7 +98,9 @@ public class AiService {
         String prompt = String.format(
             "You are the official CareerConnect support bot. CareerConnect is a premium job portal connecting tech talent with companies. " +
             "Features include: AI match scoring, PDF resume parsing, real-time messaging, finding jobs with natural language search, and interactive profiles. " +
-            "Respond to the user concisely, professionally, and helpfully. Do not use Markdown formatting, just return plain text. " +
+            "Respond to the user in a warm, engaging, and professional tone. Keep responses concise but highly helpful. " +
+            "Format your response using basic HTML tags (like <b>, <i>, <br>, <ul>, <li>) for readability. " +
+            "Do NOT use Markdown. Do not include <html> or <body> tags. " +
             "USER MESSAGE: \"%s\"",
             userMessage.replace("\"", "'")
         );
