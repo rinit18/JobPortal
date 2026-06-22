@@ -13,6 +13,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ResumeParserService {
@@ -35,11 +36,11 @@ public class ResumeParserService {
         String pdfText = extractTextFromPdf(file.getBytes());
 
         if (pdfText == null || pdfText.isBlank()) {
-            return "{\"error\": \"Could not extract text from the PDF. Please ensure it is a text-based PDF.\"}";
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not extract text from the PDF. Please ensure it is a text-based PDF.");
         }
 
-        // Limit text to 4000 chars to stay within token limits
-        String truncatedText = pdfText.length() > 4000 ? pdfText.substring(0, 4000) : pdfText;
+        // Limit text to 20000 chars to stay within token limits
+        String truncatedText = pdfText.length() > 20000 ? pdfText.substring(0, 20000) : pdfText;
 
         // Step 2: Send to Groq AI for structured extraction
         return extractProfileFromText(truncatedText);
@@ -101,8 +102,8 @@ public class ResumeParserService {
                 }
             }
         } catch (Exception e) {
-            return "{\"error\": \"AI parsing failed: " + e.getMessage() + "\"}";
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "AI parsing failed: " + e.getMessage());
         }
-        return "{\"error\": \"No response from AI.\"}";
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No response from AI.");
     }
 }

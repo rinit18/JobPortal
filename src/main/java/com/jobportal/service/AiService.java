@@ -8,6 +8,8 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.web.server.ResponseStatusException;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
@@ -72,6 +74,7 @@ public class AiService {
     /**
      * Extract structured job search filters from a natural language query.
      */
+    @Cacheable("searchQueries")
     public String parseSearchQuery(String query) {
         String prompt = String.format(
             "You are a job search assistant. Parse the user's natural language search query into exact filter parameters. " +
@@ -100,7 +103,10 @@ public class AiService {
             "Features include: AI match scoring, PDF resume parsing, real-time messaging, finding jobs with natural language search, and interactive profiles. " +
             "Respond to the user in a warm, engaging, and professional tone. Keep responses concise but highly helpful. " +
             "Format your response using basic HTML tags (like <b>, <i>, <br>, <ul>, <li>) for readability. " +
-            "Do NOT use Markdown. Do not include <html> or <body> tags.";
+            "Do NOT use Markdown. Do not include <html> or <body> tags. " +
+            "CRITICAL: You must ONLY answer questions related to CareerConnect, jobs, resumes, and career advice. " +
+            "If the user asks about unrelated topics, politely decline and steer the conversation back to CareerConnect. " +
+            "Do NOT hallucinate or invent features that are not listed here.";
 
         java.util.List<Map<String, String>> messages = new java.util.ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt));
@@ -126,7 +132,7 @@ public class AiService {
 
     private String callGroqMessages(List<Map<String, String>> messages, boolean jsonMode) {
         if (!globalBucket.tryConsume(1)) {
-            return "{\"error\": \"Rate limit reached (10 req/min). Please wait a moment and try again.\"}";
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit reached (10 req/min). Please wait a moment and try again.");
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -166,15 +172,15 @@ public class AiService {
                 }
             }
         } catch (HttpClientErrorException.TooManyRequests e) {
-            return "{\"error\": \"Rate limit reached (30 req/min). Please wait a moment and try again.\"}";
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit reached (30 req/min). Please wait a moment and try again.");
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-                return "{\"error\": \"Invalid Groq API key. Please update groq.api.key in application.properties.\"}";
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Groq API key. Please update groq.api.key in application.properties.");
             }
-            return "{\"error\": \"Groq API error: " + e.getStatusCode() + "\"}";
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Groq API error: " + e.getStatusCode());
         } catch (Exception e) {
-            return "{\"error\": \"AI service unavailable: " + e.getMessage() + "\"}";
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "AI service unavailable: " + e.getMessage());
         }
-        return "{\"error\": \"No response from AI.\"}";
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No response from AI.");
     }
 }
