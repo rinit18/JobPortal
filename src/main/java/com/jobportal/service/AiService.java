@@ -92,19 +92,25 @@ public class AiService {
     }
 
     /**
-     * Chatbot endpoint for CareerConnect.
+     * Chatbot endpoint for CareerConnect, maintaining conversation history.
      */
-    public String chatBot(String userMessage) {
-        String prompt = String.format(
+    public String chatBot(List<Map<String, String>> history) {
+        String systemPrompt = 
             "You are the official CareerConnect support bot. CareerConnect is a premium job portal connecting tech talent with companies. " +
             "Features include: AI match scoring, PDF resume parsing, real-time messaging, finding jobs with natural language search, and interactive profiles. " +
             "Respond to the user in a warm, engaging, and professional tone. Keep responses concise but highly helpful. " +
             "Format your response using basic HTML tags (like <b>, <i>, <br>, <ul>, <li>) for readability. " +
-            "Do NOT use Markdown. Do not include <html> or <body> tags. " +
-            "USER MESSAGE: \"%s\"",
-            userMessage.replace("\"", "'")
-        );
-        return callGroq(prompt, false);
+            "Do NOT use Markdown. Do not include <html> or <body> tags.";
+
+        java.util.List<Map<String, String>> messages = new java.util.ArrayList<>();
+        messages.add(Map.of("role", "system", "content", systemPrompt));
+        
+        for (Map<String, String> msg : history) {
+            String role = msg.getOrDefault("role", "user").equals("bot") ? "assistant" : "user";
+            messages.add(Map.of("role", role, "content", msg.getOrDefault("text", "")));
+        }
+
+        return callGroqMessages(messages, false);
     }
 
     /**
@@ -115,6 +121,10 @@ public class AiService {
     }
 
     private String callGroq(String prompt, boolean jsonMode) {
+        return callGroqMessages(List.of(Map.of("role", "user", "content", prompt)), jsonMode);
+    }
+
+    private String callGroqMessages(List<Map<String, String>> messages, boolean jsonMode) {
         if (!globalBucket.tryConsume(1)) {
             return "{\"error\": \"Rate limit reached (10 req/min). Please wait a moment and try again.\"}";
         }
@@ -123,12 +133,11 @@ public class AiService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(groqApiKey);
 
-        Map<String, String> message = Map.of("role", "user", "content", prompt);
         Map<String, Object> requestBody;
         if (jsonMode) {
             requestBody = Map.of(
                 "model", "llama-3.3-70b-versatile",
-                "messages", List.of(message),
+                "messages", messages,
                 "temperature", 0.7,
                 "max_tokens", 2048,
                 "response_format", Map.of("type", "json_object")
@@ -136,7 +145,7 @@ public class AiService {
         } else {
             requestBody = Map.of(
                 "model", "llama-3.3-70b-versatile",
-                "messages", List.of(message),
+                "messages", messages,
                 "temperature", 0.7,
                 "max_tokens", 2048
             );

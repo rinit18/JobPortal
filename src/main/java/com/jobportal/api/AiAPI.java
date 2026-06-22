@@ -60,9 +60,8 @@ public class AiAPI {
      * Returns: { "message": "..." }
      */
     @PostMapping("/chat")
-    public ResponseEntity<Map<String, String>> chatBot(@RequestBody Map<String, String> request) {
-        String message = request.getOrDefault("message", "");
-        String result = aiService.chatBot(message);
+    public ResponseEntity<Map<String, String>> chatBot(@RequestBody java.util.List<Map<String, String>> history) {
+        String result = aiService.chatBot(history);
         return new ResponseEntity<>(Map.of("message", result), HttpStatus.OK);
     }
 }

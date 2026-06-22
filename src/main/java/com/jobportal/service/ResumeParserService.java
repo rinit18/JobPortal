@@ -81,7 +81,8 @@ public class ResumeParserService {
             "model", "llama-3.3-70b-versatile",
             "messages", List.of(message),
             "temperature", 0.1,
-            "max_tokens", 2048
+            "max_tokens", 2048,
+            "response_format", Map.of("type", "json_object")
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
