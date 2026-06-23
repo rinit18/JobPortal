@@ -23,6 +23,7 @@ import com.jobportal.entity.Profile;
 import com.jobportal.repository.ChatRoomRepository;
 import com.jobportal.repository.MessageRepository;
 import com.jobportal.repository.ProfileRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.jobportal.dto.NotificationDTO;
 import com.jobportal.service.EmailService;
 import com.jobportal.service.NotificationService;
@@ -50,6 +51,9 @@ public class ChatAPI {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/room-by-user")
     public ResponseEntity<ChatRoom> getOrCreateRoomByUser(@RequestParam Long senderId, @RequestParam Long recipientUserId) {
@@ -168,6 +172,12 @@ public class ChatAPI {
                 e.printStackTrace();
             }
         }
+
+        // Broadcast to receiver via WebSockets topic
+        messagingTemplate.convertAndSend(
+            "/topic/messages/" + message.getRecipientId(), 
+            savedMessage
+        );
 
         return new ResponseEntity<>(savedMessage, HttpStatus.CREATED);
     }

@@ -25,6 +25,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtHelper jwtHelper;
 
+    @Autowired
+    private com.jobportal.repository.BlacklistedTokenRepository blacklistedTokenRepository;
+
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -78,7 +81,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             //fetch user detail from username
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             Boolean validateToken = this.jwtHelper.validateToken(token, userDetails.getUsername());
-            if (validateToken) {
+            Boolean isBlacklisted = this.blacklistedTokenRepository.existsById(token);
+
+            if (validateToken && !isBlacklisted) {
 
                 //set the authentication
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

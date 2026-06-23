@@ -4,6 +4,7 @@ package com.jobportal.entity;
 import java.time.LocalDateTime;
 
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import com.jobportal.dto.NotificationDTO;
 import com.jobportal.dto.NotificationStatus;
@@ -19,7 +20,7 @@ import lombok.NoArgsConstructor;
 public class Notification {
 	@org.springframework.data.annotation.Id
 	private Long id;
-	@org.springframework.data.mongodb.core.index.Indexed
+	@Indexed
 	private Long userId;
 	private String message;
 	private String action;

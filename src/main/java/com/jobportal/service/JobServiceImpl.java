@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import com.jobportal.dto.ApplicantDTO;
 import com.jobportal.dto.Application;
@@ -38,6 +40,7 @@ public class JobServiceImpl implements JobService {
 	private EmailService emailService;
 
 	@Override
+	@CacheEvict(value = "jobs", allEntries = true)
 	public JobDTO postJob(JobDTO jobDTO) throws JobPortalException {
 		if(jobDTO.getId()==0) {
 			jobDTO.setId(Utilities.getNextSequenceId("jobs"));
@@ -59,6 +62,7 @@ public class JobServiceImpl implements JobService {
 
 	
 	@Override
+	@Cacheable("jobs")
 	public List<JobDTO> getAllJobs() throws JobPortalException {
 		return jobRepository.findByJobStatus(JobStatus.ACTIVE).stream()
 				.map(Job::toDTO)
