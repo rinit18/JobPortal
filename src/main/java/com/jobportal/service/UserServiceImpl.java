@@ -49,6 +49,7 @@ public class UserServiceImpl implements UserService {
 	private OTPRepository otpRepository;
 	
 	@Autowired
+	@org.springframework.context.annotation.Lazy
 	private ProfileService profileService;
 	
 	@Autowired
