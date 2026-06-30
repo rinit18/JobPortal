@@ -18,6 +18,9 @@ public class ProfileServiceImpl implements ProfileService {
 
 	@Autowired
 	private ProfileRepository profileRepository;
+
+	@Autowired
+	private UserService userService;
 	
 	@Override
 	public Long createProfile(UserDTO userDTO) throws JobPortalException {
@@ -39,6 +42,10 @@ public class ProfileServiceImpl implements ProfileService {
 
 	@Override
 	public ProfileDTO updateProfile(ProfileDTO profileDTO) throws JobPortalException {
+		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+		if (!currentUser.getProfileId().equals(profileDTO.getId())) {
+			throw new JobPortalException("UNAUTHORIZED");
+		}
 		profileRepository.findById(profileDTO.getId()).orElseThrow(()->new JobPortalException("PROFILE_NOT_FOUND"));
 		profileRepository.save(profileDTO.toEntity());
 		return profileDTO;

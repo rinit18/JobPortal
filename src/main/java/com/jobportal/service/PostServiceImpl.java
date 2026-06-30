@@ -26,13 +26,17 @@ public class PostServiceImpl implements PostService {
     private PostRepository postRepository;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private ProfileRepository profileRepository;
 
-    @Override
     public PostDTO createPost(PostDTO postDTO) throws JobPortalException {
+        com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+        
         Post post = new Post();
         post.setId(Utilities.getNextSequenceId("posts"));
-        post.setProfileId(postDTO.getProfileId());
+        post.setProfileId(currentUser.getProfileId());
         post.setContent(postDTO.getContent());
         post.setImage(postDTO.getImage());
         post.setCreatedAt(LocalDateTime.now());
@@ -85,27 +89,31 @@ public class PostServiceImpl implements PostService {
         return filtered.stream().map(p -> populateProfile(p.toDTO())).toList();
     }
 
-    @Override
-    public PostDTO likePost(Long postId, Long profileId) throws JobPortalException {
+    public PostDTO likePost(Long postId, Long requestedProfileId) throws JobPortalException {
+        com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+        Long actualProfileId = currentUser.getProfileId();
+        
         Post post = postRepository.findById(postId).orElseThrow(() -> new JobPortalException("Post not found"));
         if (post.getLikedBy() == null) post.setLikedBy(new ArrayList<>());
         
-        if (post.getLikedBy().contains(profileId)) {
-            post.getLikedBy().remove(profileId); // Unlike
+        if (post.getLikedBy().contains(actualProfileId)) {
+            post.getLikedBy().remove(actualProfileId); // Unlike
         } else {
-            post.getLikedBy().add(profileId); // Like
+            post.getLikedBy().add(actualProfileId); // Like
         }
         
         post = postRepository.save(post);
         return populateProfile(post.toDTO());
     }
 
-    @Override
     public PostDTO addComment(Long postId, CommentDTO commentDTO) throws JobPortalException {
+        com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+        Long actualProfileId = currentUser.getProfileId();
+
         Post post = postRepository.findById(postId).orElseThrow(() -> new JobPortalException("Post not found"));
         if (post.getComments() == null) post.setComments(new ArrayList<>());
         
-        Comment comment = new Comment(UUID.randomUUID().toString(), commentDTO.getProfileId(), commentDTO.getContent(), LocalDateTime.now());
+        Comment comment = new Comment(UUID.randomUUID().toString(), actualProfileId, commentDTO.getContent(), LocalDateTime.now());
         post.getComments().add(comment);
         
         post = postRepository.save(post);

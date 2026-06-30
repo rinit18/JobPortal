@@ -1,5 +1,7 @@
 package com.jobportal.api;
 
+import com.jobportal.service.UserService;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -53,20 +55,34 @@ public class ChatAPI {
     private EmailService emailService;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/room-by-user")
-    public ResponseEntity<ChatRoom> getOrCreateRoomByUser(@RequestParam Long senderId, @RequestParam Long recipientUserId) {
+    public ResponseEntity<ChatRoom> getOrCreateRoomByUser(@RequestParam Long senderId, @RequestParam Long recipientUserId) throws com.jobportal.exception.JobPortalException {
+        com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+        Long actualSenderId = currentUser.getProfileId();
+
         Optional<com.jobportal.entity.User> userOpt = userRepository.findById(recipientUserId);
         Long recipientProfileId = recipientUserId; // Fallback
         if (userOpt.isPresent() && userOpt.get().getProfileId() != null) {
             recipientProfileId = userOpt.get().getProfileId();
         }
-        return getOrCreateRoom(senderId, recipientProfileId);
+        return getOrCreateRoom(actualSenderId, recipientProfileId);
     }
 
     @PostMapping("/room")
     public ResponseEntity<ChatRoom> getOrCreateRoom(@RequestParam Long senderId, @RequestParam Long recipientId) {
+        try {
+            com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+            Long actualSenderId = currentUser.getProfileId();
+            senderId = actualSenderId;
+        } catch (com.jobportal.exception.JobPortalException e) {
+            throw new RuntimeException("Unauthorized");
+        }
+
         Long minId = Math.min(senderId, recipientId);
         Long maxId = Math.max(senderId, recipientId);
         String roomId = minId + "-" + maxId;
@@ -119,24 +135,43 @@ public class ChatAPI {
     }
 
     @GetMapping("/conversations/{profileId}")
-    public ResponseEntity<List<ChatRoom>> getConversations(@PathVariable Long profileId) {
-        List<ChatRoom> rooms = chatRoomRepository.findByUser1IdOrUser2IdOrderByLastActiveDesc(profileId, profileId);
+    public ResponseEntity<List<ChatRoom>> getConversations(@PathVariable Long profileId) throws com.jobportal.exception.JobPortalException {
+        com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+        Long actualProfileId = currentUser.getProfileId();
+        List<ChatRoom> rooms = chatRoomRepository.findByUser1IdOrUser2IdOrderByLastActiveDesc(actualProfileId, actualProfileId);
         return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
 
     @GetMapping("/messages/{chatRoomId}")
-    public ResponseEntity<List<Message>> getMessages(@PathVariable String chatRoomId) {
+    public ResponseEntity<List<Message>> getMessages(@PathVariable String chatRoomId) throws com.jobportal.exception.JobPortalException {
+        com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+        Long actualProfileId = currentUser.getProfileId();
+
+        Optional<ChatRoom> room = chatRoomRepository.findById(chatRoomId);
+        if (room.isEmpty() || (!room.get().getUser1Id().equals(actualProfileId) && !room.get().getUser2Id().equals(actualProfileId))) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
         List<Message> messages = messageRepository.findByChatRoomIdOrderByTimestampAsc(chatRoomId);
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
 
     @PostMapping("/send")
-    public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+    public ResponseEntity<Message> sendMessage(@RequestBody Message message) throws com.jobportal.exception.JobPortalException {
+        com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+        Long actualProfileId = currentUser.getProfileId();
+
+        Optional<ChatRoom> roomOpt = chatRoomRepository.findById(message.getChatRoomId());
+        if (roomOpt.isEmpty() || (!roomOpt.get().getUser1Id().equals(actualProfileId) && !roomOpt.get().getUser2Id().equals(actualProfileId))) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+        message.setSenderId(actualProfileId);
         message.setTimestamp(LocalDateTime.now());
         Message savedMessage = messageRepository.save(message);
 
         // Update last message and active time in parent chat room
-        Optional<ChatRoom> roomOpt = chatRoomRepository.findById(message.getChatRoomId());
+        roomOpt = chatRoomRepository.findById(message.getChatRoomId());
         if (roomOpt.isPresent()) {
             ChatRoom room = roomOpt.get();
             room.setLastMessage(message.getText());

@@ -25,13 +25,28 @@ import com.jobportal.service.NotificationService;
 public class NotificationAPI {
 	@Autowired
 	private NotificationService notificationService;
+
+	@Autowired
+	private com.jobportal.service.UserService userService;
+	
+	@Autowired
+	private com.jobportal.repository.NotificationRepository notificationRepository;
 	
 	@GetMapping("/get/{userId}")
-	public ResponseEntity<List<Notification>>getNotifications(@PathVariable Long userId){
+	public ResponseEntity<List<Notification>>getNotifications(@PathVariable Long userId) throws JobPortalException {
+		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+		if (!currentUser.getId().equals(userId)) {
+			return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+		}
 		return new ResponseEntity<>(notificationService.getNotifications(userId), HttpStatus.OK);
 	}
 	@PutMapping("/read/{id}")
 	public ResponseEntity<ResponseDTO>readNotification(@PathVariable Long id) throws JobPortalException{
+		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+		Notification noti = notificationRepository.findById(id).orElseThrow(() -> new JobPortalException("No Notification found"));
+		if (!noti.getUserId().equals(currentUser.getId())) {
+			return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+		}
 		notificationService.readNotification(id);
 		return new ResponseEntity<>(new ResponseDTO("Success"), HttpStatus.OK);
 	}

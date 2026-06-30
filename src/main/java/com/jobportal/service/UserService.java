@@ -13,6 +13,7 @@ public interface UserService {
 
 	public UserDTO registerUser(UserDTO userDTO) throws JobPortalException;
 	public UserDTO getUserByEmail(String email)throws JobPortalException;
+	public UserDTO getCurrentUser() throws JobPortalException;
 
 	public UserDTO loginUser(LoginDTO loginDTO) throws JobPortalException;
 

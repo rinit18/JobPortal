@@ -39,9 +39,18 @@ public class JobServiceImpl implements JobService {
 	@Autowired
 	private EmailService emailService;
 
+	@Autowired
+	private UserService userService;
+
 	@Override
 	@CacheEvict(value = "jobs", allEntries = true)
 	public JobDTO postJob(JobDTO jobDTO) throws JobPortalException {
+		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+		if (currentUser.getAccountType() != com.jobportal.dto.AccountType.EMPLOYER) {
+			throw new JobPortalException("UNAUTHORIZED");
+		}
+		jobDTO.setPostedBy(currentUser.getId());
+
 		if(jobDTO.getId()==0) {
 			jobDTO.setId(Utilities.getNextSequenceId("jobs"));
 			jobDTO.setPostTime(LocalDateTime.now());
@@ -106,6 +115,12 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public void applyJob(Long id, ApplicantDTO applicantDTO) throws JobPortalException {
+		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+		if (currentUser.getAccountType() != com.jobportal.dto.AccountType.APPLICANT) {
+			throw new JobPortalException("UNAUTHORIZED");
+		}
+		applicantDTO.setApplicantId(currentUser.getId());
+
 		Job job = jobRepository.findById(id).orElseThrow(() -> new JobPortalException("JOB_NOT_FOUND"));
 		List<Applicant> applicants = job.getApplicants();
 		if (applicants == null)applicants = new ArrayList<>();
@@ -147,7 +162,13 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public void changeAppStatus(Application application) throws JobPortalException {
+		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
 		Job job = jobRepository.findById(application.getId()).orElseThrow(() -> new JobPortalException("JOB_NOT_FOUND"));
+		
+		if (!job.getPostedBy().equals(currentUser.getId())) {
+			throw new JobPortalException("UNAUTHORIZED");
+		}
+
 		List<Applicant> apps = job.getApplicants().stream().map((x) -> {
 			if (application.getApplicantId().equals(x.getApplicantId())) {
 				x.setApplicationStatus(application.getApplicationStatus());

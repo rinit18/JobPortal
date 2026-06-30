@@ -12,6 +12,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.jobportal.dto.LoginDTO;
@@ -200,6 +201,12 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserDTO getUserByEmail(String email) throws JobPortalException {
 		return userRepository.findByEmail(email).orElseThrow(() -> new JobPortalException("USER_NOT_FOUND")).toDTO();
+	}
+	
+	@Override
+	public UserDTO getCurrentUser() throws JobPortalException {
+		String email = SecurityContextHolder.getContext().getAuthentication().getName();
+		return getUserByEmail(email);
 	}
 	
 	@Override
