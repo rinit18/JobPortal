@@ -12,7 +12,7 @@ public class UpdatePasswordDTO {
     private String oldPassword;
 
     @NotBlank(message = "{user.password.absent}")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,15}$", message = "{user.password.invalid}")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[A-Za-z\\d!@#$%^&*]{8,15}$", message = "{user.password.invalid}")
     private String newPassword;
 
     public String getEmail() {
