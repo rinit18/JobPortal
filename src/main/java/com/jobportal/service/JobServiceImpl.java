@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.jobportal.dto.ApplicantDTO;
 import com.jobportal.dto.Application;
@@ -44,6 +45,7 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	@CacheEvict(value = "jobs", allEntries = true)
+	@Transactional
 	public JobDTO postJob(JobDTO jobDTO) throws JobPortalException {
 		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
 		if (currentUser.getAccountType() != com.jobportal.dto.AccountType.EMPLOYER) {
@@ -114,6 +116,7 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	@Transactional
 	public void applyJob(Long id, ApplicantDTO applicantDTO) throws JobPortalException {
 		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
 		if (currentUser.getAccountType() != com.jobportal.dto.AccountType.APPLICANT) {
@@ -161,6 +164,7 @@ public class JobServiceImpl implements JobService {
 
 
 	@Override
+	@Transactional
 	public void changeAppStatus(Application application) throws JobPortalException {
 		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
 		Job job = jobRepository.findById(application.getId()).orElseThrow(() -> new JobPortalException("JOB_NOT_FOUND"));

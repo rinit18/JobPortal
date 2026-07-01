@@ -17,6 +17,9 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     // ─────────────────────────────────────────
     // 1. New Message Notification
     // ─────────────────────────────────────────
@@ -93,7 +96,7 @@ public class EmailService {
             "<b>" + senderName + "</b> sent you a message on CareerConnect:",
             highlight,
             "Reply Now",
-            "https://careerconnect.onrender.com/messages"
+            frontendUrl + "/messages"
         );
     }
 
@@ -106,7 +109,7 @@ public class EmailService {
             "Great news! <b>" + applicantName + "</b> has applied for your job posting:",
             highlight,
             "View Application",
-            "https://careerconnect.onrender.com/posted-jobs/0"
+            frontendUrl + "/posted-jobs/0"
         );
     }
 
@@ -147,7 +150,7 @@ public class EmailService {
             bodyText,
             highlight,
             "View Job History",
-            "https://careerconnect.onrender.com/job-history"
+            frontendUrl + "/job-history"
         );
     }
 

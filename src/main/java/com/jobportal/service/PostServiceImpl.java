@@ -86,7 +86,38 @@ public class PostServiceImpl implements PostService {
             });
         }
 
-        return filtered.stream().map(p -> populateProfile(p.toDTO())).toList();
+        // Bulk profile fetching to prevent N+1 query problem
+        java.util.Set<Long> profileIdsToFetch = new java.util.HashSet<>();
+        for (Post p : filtered) {
+            if (p.getProfileId() != null) profileIdsToFetch.add(p.getProfileId());
+            if (p.getComments() != null) {
+                for (Comment c : p.getComments()) {
+                    if (c.getProfileId() != null) profileIdsToFetch.add(c.getProfileId());
+                }
+            }
+        }
+
+        java.util.Map<Long, com.jobportal.dto.ProfileDTO> profileMap = new java.util.HashMap<>();
+        if (!profileIdsToFetch.isEmpty()) {
+            profileRepository.findAllById(profileIdsToFetch).forEach(profile -> {
+                profileMap.put(profile.getId(), profile.toDTO());
+            });
+        }
+
+        return filtered.stream().map(p -> {
+            PostDTO dto = p.toDTO();
+            if (dto.getProfileId() != null) {
+                dto.setProfile(profileMap.get(dto.getProfileId()));
+            }
+            if (dto.getComments() != null) {
+                dto.getComments().forEach(c -> {
+                    if (c.getProfileId() != null) {
+                        c.setProfile(profileMap.get(c.getProfileId()));
+                    }
+                });
+            }
+            return dto;
+        }).toList();
     }
 
     public PostDTO likePost(Long postId, Long requestedProfileId) throws JobPortalException {

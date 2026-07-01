@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.jobportal.entity.ContactMessage;
 import com.jobportal.entity.Feedback;
@@ -52,6 +53,7 @@ public class AdminService {
         return userRepository.findAll();
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
@@ -60,14 +62,17 @@ public class AdminService {
         return jobRepository.findAll();
     }
 
+    @Transactional
     public void deleteJob(Long id) {
         jobRepository.deleteById(id);
     }
 
+    @Transactional
     public void deleteFeedback(String id) {
         feedbackRepository.deleteById(id);
     }
 
+    @Transactional
     public void deleteContactMessage(String id) {
         contactMessageRepository.deleteById(id);
     }

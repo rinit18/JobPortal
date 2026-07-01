@@ -21,6 +21,7 @@ import java.util.Map;
 import com.jobportal.entity.BlacklistedToken;
 import com.jobportal.repository.BlacklistedTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController
 @CrossOrigin
@@ -38,7 +39,7 @@ public class AuthAPI {
 	private BlacklistedTokenRepository blacklistedTokenRepository;
 	
 	@PostMapping("/login")
-	public ResponseEntity<?>createAuthenticationToken(@RequestBody AuthenticationRequest request) throws JobPortalException{
+	public ResponseEntity<?>createAuthenticationToken(@RequestBody @Valid AuthenticationRequest request) throws JobPortalException{
 		try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())

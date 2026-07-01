@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.jobportal.dto.LoginDTO;
 import com.jobportal.dto.NotificationDTO;
@@ -83,6 +84,7 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	@Override
+	@Transactional
 	public UserDTO registerUser(UserDTO userDTO) throws JobPortalException {
 		Optional<User> optional = userRepository.findByEmail(userDTO.getEmail());
 		if (optional.isPresent())
@@ -179,7 +181,15 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	@Scheduled(fixedRate = 86400000) // 24 hours
+	public void clearRateLimiterBuckets() {
+		otpBuckets.clear();
+		loginBuckets.clear();
+		log.info("Cleared rate limiter buckets to prevent memory leak");
+	}
+
 	@Override
+	@Transactional
 	public ResponseDTO changePassword(ResetPasswordDTO resetPasswordDTO) throws JobPortalException {
 		if (!jwtHelper.validateResetToken(resetPasswordDTO.getToken(), resetPasswordDTO.getEmail())) {
 			throw new JobPortalException("INVALID_OR_EXPIRED_TOKEN");
@@ -213,6 +223,7 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	@Override
+	@Transactional
 	public ResponseDTO updatePassword(com.jobportal.dto.UpdatePasswordDTO updatePasswordDTO) throws JobPortalException {
 		User user = userRepository.findByEmail(updatePasswordDTO.getEmail())
 				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
@@ -234,6 +245,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional
 	public ResponseDTO deleteUserAccount(String email) throws JobPortalException {
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));

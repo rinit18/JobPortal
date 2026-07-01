@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jobportal.dto.UserDTO;
+import com.jobportal.dto.JobDTO;
 import com.jobportal.entity.ContactMessage;
 import com.jobportal.entity.Feedback;
 import com.jobportal.entity.Job;
@@ -43,8 +45,13 @@ public class AdminAPI {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getUsers() {
-        return new ResponseEntity<>(adminService.getAllUsers(), HttpStatus.OK);
+    public ResponseEntity<List<UserDTO>> getUsers() {
+        List<UserDTO> dtoList = adminService.getAllUsers().stream().map(u -> {
+            UserDTO dto = u.toDTO();
+            dto.setPassword(null); // prevent leaking password hash
+            return dto;
+        }).toList();
+        return new ResponseEntity<>(dtoList, HttpStatus.OK);
     }
 
     @DeleteMapping("/users/{id}")
@@ -54,8 +61,9 @@ public class AdminAPI {
     }
 
     @GetMapping("/jobs")
-    public ResponseEntity<List<Job>> getJobs() {
-        return new ResponseEntity<>(adminService.getAllJobs(), HttpStatus.OK);
+    public ResponseEntity<List<JobDTO>> getJobs() {
+        List<JobDTO> dtoList = adminService.getAllJobs().stream().map(Job::toDTO).toList();
+        return new ResponseEntity<>(dtoList, HttpStatus.OK);
     }
 
     @DeleteMapping("/jobs/{id}")

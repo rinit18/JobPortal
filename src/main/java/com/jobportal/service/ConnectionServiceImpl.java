@@ -131,9 +131,21 @@ public class ConnectionServiceImpl implements ConnectionService {
     @Override
     public List<ConnectionRequestDTO> getPendingRequests(Long userId) throws JobPortalException {
         List<ConnectionRequest> reqs = connectionRequestRepository.findByReceiverIdAndStatus(userId, ConnectionRequestStatus.PENDING);
+        
+        java.util.Set<Long> senderIds = reqs.stream().map(ConnectionRequest::getSenderId).collect(java.util.stream.Collectors.toSet());
+        java.util.Map<Long, ProfileDTO> profileMap = new java.util.HashMap<>();
+        
+        if (!senderIds.isEmpty()) {
+            profileRepository.findAllById(senderIds).forEach(profile -> {
+                profileMap.put(profile.getId(), profile.toDTO());
+            });
+        }
+        
         return reqs.stream().map(req -> {
             ConnectionRequestDTO dto = req.toDTO();
-            profileRepository.findById(req.getSenderId()).ifPresent(p -> dto.setSender(p.toDTO()));
+            if (profileMap.containsKey(req.getSenderId())) {
+                dto.setSender(profileMap.get(req.getSenderId()));
+            }
             return dto;
         }).toList();
     }

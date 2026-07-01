@@ -16,10 +16,17 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.scheduling.annotation.Scheduled;
+
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedRate = 86400000) // 24 hours
+    public void clearCache() {
+        cache.clear();
+    }
 
     private Bucket createNewBucket() {
         // Allow 10 requests per minute per IP for auth endpoints

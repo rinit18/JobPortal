@@ -77,7 +77,7 @@ public class JobAPI {
 		return new ResponseEntity<>(jobService.getSavedJobs(jobIds), HttpStatus.OK);
 	}
 	@PostMapping("apply/{id}")
-	public ResponseEntity<ResponseDTO>applyJob(@PathVariable Long id, @RequestBody ApplicantDTO applicantDTO) throws JobPortalException{
+	public ResponseEntity<ResponseDTO>applyJob(@PathVariable Long id, @RequestBody @Valid ApplicantDTO applicantDTO) throws JobPortalException{
 		jobService.applyJob(id, applicantDTO);
 		return new ResponseEntity<>(new ResponseDTO("Applied Successfully"), HttpStatus.OK);
 	}
@@ -91,7 +91,7 @@ public class JobAPI {
 		return new ResponseEntity<>(jobService.getHistory(id, applicationStatus), HttpStatus.OK);
 	}
 	@PostMapping("/changeAppStatus")
-	public ResponseEntity<ResponseDTO>changeAppStatus(@RequestBody Application application) throws JobPortalException{
+	public ResponseEntity<ResponseDTO>changeAppStatus(@RequestBody @Valid Application application) throws JobPortalException{
 		jobService.changeAppStatus(application);
 		return new ResponseEntity<>(new ResponseDTO("Status Changed Successfully"), HttpStatus.OK);
 	}
