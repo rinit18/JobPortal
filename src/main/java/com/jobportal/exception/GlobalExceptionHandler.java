@@ -14,6 +14,10 @@ import com.jobportal.dto.ResponseDTO;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import com.jobportal.dto.ErrorDTO;
+
 /**
  * Centralized exception handler for the entire application.
  * Prevents stack traces from leaking to clients and returns clean JSON errors.
@@ -23,14 +27,28 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @Autowired
+    private Environment environment;
+
     /**
      * Handle all known business logic exceptions.
      * Returns 400 Bad Request with the exception message.
      */
     @ExceptionHandler(JobPortalException.class)
-    public ResponseEntity<ResponseDTO> handleJobPortalException(JobPortalException ex) {
+    public ResponseEntity<ErrorDTO> handleJobPortalException(JobPortalException ex) {
         log.warn("Business exception: {}", ex.getMessage());
-        return new ResponseEntity<>(new ResponseDTO(ex.getMessage()), HttpStatus.BAD_REQUEST);
+        String translatedMessage = environment.getProperty(ex.getMessage(), ex.getMessage());
+        
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        if (ex.getMessage().contains("UNAUTHORIZED") || ex.getMessage().contains("INVALID_CREDENTIALS")) {
+            status = HttpStatus.UNAUTHORIZED;
+        } else if (ex.getMessage().contains("NOT_FOUND")) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (ex.getMessage().contains("FORBIDDEN")) {
+            status = HttpStatus.FORBIDDEN;
+        }
+        
+        return new ResponseEntity<>(new ErrorDTO(translatedMessage), status);
     }
 
     /**
@@ -54,8 +72,8 @@ public class GlobalExceptionHandler {
      * Returns 500 without exposing internal details.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ResponseDTO> handleGenericException(Exception ex) {
+    public ResponseEntity<ErrorDTO> handleGenericException(Exception ex) {
         log.error("Unexpected error: ", ex);
-        return new ResponseEntity<>(new ResponseDTO("An unexpected error occurred. Please try again."), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(new ErrorDTO("An unexpected error occurred. Please try again."), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
