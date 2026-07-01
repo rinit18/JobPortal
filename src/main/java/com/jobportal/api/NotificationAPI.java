@@ -50,4 +50,11 @@ public class NotificationAPI {
 		notificationService.readNotification(id);
 		return new ResponseEntity<>(new ResponseDTO("Success"), HttpStatus.OK);
 	}
+	
+	@PutMapping("/readAll")
+	public ResponseEntity<ResponseDTO>readAllNotifications() throws JobPortalException{
+		com.jobportal.dto.UserDTO currentUser = userService.getCurrentUser();
+		notificationService.readAllNotifications(currentUser.getId());
+		return new ResponseEntity<>(new ResponseDTO("Success"), HttpStatus.OK);
+	}
 }

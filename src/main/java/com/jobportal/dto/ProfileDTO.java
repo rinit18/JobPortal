@@ -21,6 +21,7 @@ public class ProfileDTO {
 	private String location;
 	private String about;
 	private String picture;
+	private String coverPhoto;
 	private String resumePdf;
 	private Long totalExp;
 	private List<String> skills;
@@ -30,6 +31,6 @@ public class ProfileDTO {
 	private List<Long>connections;
 	
 	public Profile toEntity() {
-		return new Profile(this.id,this.name, this.email, this.jobTitle, this.company, this.location, this.about,this.picture!=null?Base64.getDecoder().decode(this.picture):null, this.resumePdf!=null?Base64.getDecoder().decode(this.resumePdf):null,this.totalExp, this.skills, this.experiences, this.certifications, this.savedJobs, this.connections);
+		return new Profile(this.id,this.name, this.email, this.jobTitle, this.company, this.location, this.about,this.picture!=null?Base64.getDecoder().decode(this.picture):null, this.coverPhoto!=null?Base64.getDecoder().decode(this.coverPhoto):null, this.resumePdf!=null?Base64.getDecoder().decode(this.resumePdf):null,this.totalExp, this.skills, this.experiences, this.certifications, this.savedJobs, this.connections);
 	}
 }

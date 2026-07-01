@@ -169,9 +169,9 @@ public class ConnectionServiceImpl implements ConnectionService {
     @Override
     public void generateMockData(Long userId) throws JobPortalException {
         // Always generate a few mock profiles for testing
-        Profile p1 = new Profile(Utilities.getNextSequenceId("profiles"), "Alice Johnson", "alice@test.com", "Frontend Developer", "Google", "California, USA", "Passionate about UI/UX", null, null, 4L, List.of("React", "CSS"), null, null, null, new ArrayList<>());
-        Profile p2 = new Profile(Utilities.getNextSequenceId("profiles"), "Bob Smith", "bob@test.com", "Data Scientist", "Amazon", "Seattle, USA", "Love working with data.", null, null, 2L, List.of("Python", "SQL"), null, null, null, new ArrayList<>());
-        Profile p3 = new Profile(Utilities.getNextSequenceId("profiles"), "Charlie Davis", "charlie@test.com", "Product Manager", "Microsoft", "Redmond, USA", "Building great products.", null, null, 6L, List.of("Agile", "Jira"), null, null, null, new ArrayList<>());
+        Profile p1 = new Profile(Utilities.getNextSequenceId("profiles"), "Alice Johnson", "alice@test.com", "Frontend Developer", "Google", "California, USA", "Passionate about UI/UX", null, null, null, 4L, List.of("React", "CSS"), null, null, null, new ArrayList<>());
+        Profile p2 = new Profile(Utilities.getNextSequenceId("profiles"), "Bob Smith", "bob@test.com", "Data Scientist", "Amazon", "Seattle, USA", "Love working with data.", null, null, null, 2L, List.of("Python", "SQL"), null, null, null, new ArrayList<>());
+        Profile p3 = new Profile(Utilities.getNextSequenceId("profiles"), "Charlie Davis", "charlie@test.com", "Product Manager", "Microsoft", "Redmond, USA", "Building great products.", null, null, null, 6L, List.of("Agile", "Jira"), null, null, null, new ArrayList<>());
 
         profileRepository.saveAll(List.of(p1, p2, p3));
 
