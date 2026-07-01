@@ -121,6 +121,7 @@ public class UserServiceImpl implements UserService {
 
 		MimeMessage mm = mailSender.createMimeMessage();
 		MimeMessageHelper message = new MimeMessageHelper(mm, true);
+		message.setFrom("onboarding@resend.dev", "CareerConnect");
 		message.setTo(email);
 		message.setSubject("Your OTP Code");
 		String generatedOtp = Utilities.generateOTP();
@@ -144,6 +145,7 @@ public class UserServiceImpl implements UserService {
 
 		MimeMessage mm = mailSender.createMimeMessage();
 		MimeMessageHelper message = new MimeMessageHelper(mm, true);
+		message.setFrom("onboarding@resend.dev", "CareerConnect");
 		message.setTo(email);
 		message.setSubject("Your Registration OTP Code");
 		String generatedOtp = Utilities.generateOTP();
