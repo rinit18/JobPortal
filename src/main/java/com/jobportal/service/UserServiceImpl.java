@@ -130,7 +130,12 @@ public class UserServiceImpl implements UserService {
 		OTP otp = new OTP(email, generatedOtp, LocalDateTime.now());
 		otpRepository.save(otp);
 		message.setText(Data.getMessageBody(generatedOtp, user.getName()), true);
-		mailSender.send(mm);
+		try {
+			mailSender.send(mm);
+		} catch (Exception e) {
+			log.error("Failed to send OTP via email. Missing RESEND_API_KEY? Printing to console instead.");
+			log.info("========== OTP CODE FOR {} is: {} ==========", email, generatedOtp);
+		}
 		return true;
 	}
 	
@@ -155,7 +160,12 @@ public class UserServiceImpl implements UserService {
 		otpRepository.save(otp);
 		String defaultName = email.contains("@") ? email.split("@")[0] : "Future User";
 		message.setText(Data.getMessageBody(generatedOtp, defaultName), true);
-		mailSender.send(mm);
+		try {
+			mailSender.send(mm);
+		} catch (Exception e) {
+			log.error("Failed to send Registration OTP via email. Missing RESEND_API_KEY? Printing to console instead.");
+			log.info("========== OTP CODE FOR {} is: {} ==========", email, generatedOtp);
+		}
 		return true;
 	}
 
