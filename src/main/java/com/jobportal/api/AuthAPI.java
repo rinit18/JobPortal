@@ -59,7 +59,7 @@ public class AuthAPI {
 	}
 
 	@PostMapping("/logout")
-	public ResponseEntity<?> logout(HttpServletRequest request) {
+	public ResponseEntity<?> logout(HttpServletRequest request) throws JobPortalException {
 		String authHeader = request.getHeader("Authorization");
 		if (authHeader != null && authHeader.startsWith("Bearer ")) {
 			String token = authHeader.substring(7);
@@ -69,9 +69,9 @@ public class AuthAPI {
 				blacklistedTokenRepository.save(bt);
 				return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
 			} catch (Exception e) {
-				return ResponseEntity.badRequest().body(Map.of("message", "Invalid token"));
+				throw new JobPortalException("Invalid token");
 			}
 		}
-		return ResponseEntity.badRequest().body(Map.of("message", "No token provided"));
+		throw new JobPortalException("No token provided");
 	}
 }

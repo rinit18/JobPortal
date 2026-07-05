@@ -152,13 +152,28 @@ public class PostServiceImpl implements PostService {
     }
 
     private PostDTO populateProfile(PostDTO dto) {
+        java.util.Set<Long> profileIdsToFetch = new java.util.HashSet<>();
+        if (dto.getProfileId() != null) profileIdsToFetch.add(dto.getProfileId());
+        if (dto.getComments() != null) {
+            for (CommentDTO c : dto.getComments()) {
+                if (c.getProfileId() != null) profileIdsToFetch.add(c.getProfileId());
+            }
+        }
+        
+        java.util.Map<Long, com.jobportal.dto.ProfileDTO> profileMap = new java.util.HashMap<>();
+        if (!profileIdsToFetch.isEmpty()) {
+            profileRepository.findAllById(profileIdsToFetch).forEach(profile -> {
+                profileMap.put(profile.getId(), profile.toDTO());
+            });
+        }
+        
         if (dto.getProfileId() != null) {
-            profileRepository.findById(dto.getProfileId()).ifPresent(p -> dto.setProfile(p.toDTO()));
+            dto.setProfile(profileMap.get(dto.getProfileId()));
         }
         if (dto.getComments() != null) {
             dto.getComments().forEach(c -> {
                 if (c.getProfileId() != null) {
-                    profileRepository.findById(c.getProfileId()).ifPresent(p -> c.setProfile(p.toDTO()));
+                    c.setProfile(profileMap.get(c.getProfileId()));
                 }
             });
         }

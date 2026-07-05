@@ -1,0 +1,176 @@
+package com.jobportal.service;
+
+import com.jobportal.dto.NotificationDTO;
+import com.jobportal.entity.ChatRoom;
+import com.jobportal.entity.Message;
+import com.jobportal.entity.Profile;
+import com.jobportal.exception.JobPortalException;
+import com.jobportal.repository.ChatRoomRepository;
+import com.jobportal.repository.MessageRepository;
+import com.jobportal.repository.ProfileRepository;
+import com.jobportal.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class ChatServiceImpl implements ChatService {
+
+    @Autowired
+    private ChatRoomRepository chatRoomRepository;
+
+    @Autowired
+    private MessageRepository messageRepository;
+
+    @Autowired
+    private ProfileRepository profileRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    @Override
+    public ChatRoom getOrCreateRoomByUser(Long senderId, Long recipientUserId) throws JobPortalException {
+        Optional<com.jobportal.entity.User> userOpt = userRepository.findById(recipientUserId);
+        Long recipientProfileId = recipientUserId; // Fallback
+        if (userOpt.isPresent() && userOpt.get().getProfileId() != null) {
+            recipientProfileId = userOpt.get().getProfileId();
+        }
+        return getOrCreateRoom(senderId, recipientProfileId);
+    }
+
+    @Override
+    public ChatRoom getOrCreateRoom(Long senderId, Long recipientId) throws JobPortalException {
+        Long minId = Math.min(senderId, recipientId);
+        Long maxId = Math.max(senderId, recipientId);
+        String roomId = minId + "-" + maxId;
+
+        Optional<ChatRoom> existingRoom = chatRoomRepository.findById(roomId);
+        if (existingRoom.isPresent()) {
+            return existingRoom.get();
+        }
+
+        // Validate Connection
+        Optional<Profile> senderProfile = profileRepository.findById(senderId);
+        if (senderProfile.isEmpty() || senderProfile.get().getConnections() == null || !senderProfile.get().getConnections().contains(recipientId)) {
+            throw new JobPortalException("You can only message your connections.");
+        }
+        
+        ChatRoom room = new ChatRoom();
+        room.setId(roomId);
+        room.setUser1Id(senderId);
+        room.setUser2Id(recipientId);
+        room.setLastActive(LocalDateTime.now());
+        room.setLastMessage("Started conversation");
+
+        Optional<Profile> p1 = profileRepository.findById(senderId);
+        if (p1.isPresent()) {
+            room.setUser1Name(p1.get().getName());
+            String role = p1.get().getJobTitle();
+            if (p1.get().getCompany() != null && !p1.get().getCompany().isEmpty()) {
+                role += " at " + p1.get().getCompany();
+            }
+            room.setUser1Role(role != null ? role : "Member");
+        } else {
+            room.setUser1Name("User " + senderId);
+            room.setUser1Role("Member");
+        }
+
+        Optional<Profile> p2 = profileRepository.findById(recipientId);
+        if (p2.isPresent()) {
+            room.setUser2Name(p2.get().getName());
+            String role = p2.get().getJobTitle();
+            if (p2.get().getCompany() != null && !p2.get().getCompany().isEmpty()) {
+                role += " at " + p2.get().getCompany();
+            }
+            room.setUser2Role(role != null ? role : "Member");
+        } else {
+            room.setUser2Name("User " + recipientId);
+            room.setUser2Role("Member");
+        }
+
+        return chatRoomRepository.save(room);
+    }
+
+    @Override
+    public List<ChatRoom> getConversations(Long profileId) throws JobPortalException {
+        return chatRoomRepository.findByUser1IdOrUser2IdOrderByLastActiveDesc(profileId, profileId);
+    }
+
+    @Override
+    public List<Message> getMessages(String chatRoomId, Long currentProfileId) throws JobPortalException {
+        Optional<ChatRoom> room = chatRoomRepository.findById(chatRoomId);
+        if (room.isEmpty() || (!room.get().getUser1Id().equals(currentProfileId) && !room.get().getUser2Id().equals(currentProfileId))) {
+            throw new JobPortalException("FORBIDDEN");
+        }
+
+        return messageRepository.findByChatRoomIdOrderByTimestampAsc(chatRoomId);
+    }
+
+    @Override
+    public Message sendMessage(Message message, Long currentProfileId) throws JobPortalException {
+        Optional<ChatRoom> roomOpt = chatRoomRepository.findById(message.getChatRoomId());
+        if (roomOpt.isEmpty() || (!roomOpt.get().getUser1Id().equals(currentProfileId) && !roomOpt.get().getUser2Id().equals(currentProfileId))) {
+            throw new JobPortalException("FORBIDDEN");
+        }
+
+        message.setSenderId(currentProfileId);
+        message.setTimestamp(LocalDateTime.now());
+        Message savedMessage = messageRepository.save(message);
+
+        // Update last message and active time in parent chat room
+        ChatRoom room = roomOpt.get();
+        room.setLastMessage(message.getText());
+        room.setLastActive(LocalDateTime.now());
+        chatRoomRepository.save(room);
+        
+        try {
+            NotificationDTO notiDto = new NotificationDTO();
+            notiDto.setAction("New Message");
+            
+            String senderName = "Someone";
+            if (message.getSenderId().equals(room.getUser1Id())) {
+                senderName = room.getUser1Name();
+            } else if (message.getSenderId().equals(room.getUser2Id())) {
+                senderName = room.getUser2Name();
+            }
+            
+            notiDto.setMessage("You received a new message from " + senderName);
+            notiDto.setUserId(message.getRecipientId());
+            notiDto.setRoute("/messages?roomId=" + room.getId());
+            notificationService.sendNotification(notiDto);
+
+            // Send Gmail to recipient
+            final String finalSenderName = senderName;
+            final String msgPreview = message.getText() != null && message.getText().length() > 120
+                ? message.getText().substring(0, 120) + "..."
+                : message.getText();
+            userRepository.findById(message.getRecipientId()).ifPresent(recipient -> {
+                String recipientName = recipient.getName() != null ? recipient.getName() : "there";
+                emailService.sendNewMessageEmail(recipient.getEmail(), recipientName, finalSenderName, msgPreview);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Broadcast to receiver via WebSockets topic
+        messagingTemplate.convertAndSend(
+            "/topic/messages/" + message.getRecipientId(), 
+            savedMessage
+        );
+
+        return savedMessage;
+    }
+}

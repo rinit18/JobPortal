@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
 
 import com.jobportal.dto.CommentDTO;
 import com.jobportal.dto.PostDTO;
@@ -22,13 +24,14 @@ import com.jobportal.service.PostService;
 @RestController
 @CrossOrigin
 @RequestMapping("/posts")
+@Validated
 public class PostAPI {
 
     @Autowired
     private PostService postService;
 
     @PostMapping("/create")
-    public ResponseEntity<PostDTO> createPost(@RequestBody PostDTO postDTO) throws JobPortalException {
+    public ResponseEntity<PostDTO> createPost(@Valid @RequestBody PostDTO postDTO) throws JobPortalException {
         return new ResponseEntity<>(postService.createPost(postDTO), HttpStatus.CREATED);
     }
 
@@ -46,7 +49,7 @@ public class PostAPI {
     }
 
     @PostMapping("/comment/{postId}")
-    public ResponseEntity<PostDTO> addComment(@PathVariable Long postId, @RequestBody CommentDTO commentDTO) throws JobPortalException {
+    public ResponseEntity<PostDTO> addComment(@PathVariable Long postId, @Valid @RequestBody CommentDTO commentDTO) throws JobPortalException {
         return new ResponseEntity<>(postService.addComment(postId, commentDTO), HttpStatus.OK);
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.jobportal.service.ResumeParserService;
+import com.jobportal.exception.JobPortalException;
 
 @RestController
 @CrossOrigin
@@ -21,16 +22,14 @@ public class ResumeAPI {
      * Returns structured profile JSON extracted by AI.
      */
     @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> parseResume(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> parseResume(@RequestParam("file") MultipartFile file) throws JobPortalException {
         if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest()
-                .body("{\"error\": \"No file uploaded.\"}");
+            throw new JobPortalException("No file uploaded.");
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.contains("pdf")) {
-            return ResponseEntity.badRequest()
-                .body("{\"error\": \"Only PDF files are supported. Received: " + contentType + "\"}");
+            throw new JobPortalException("Only PDF files are supported.");
         }
 
         try {
@@ -41,9 +40,7 @@ public class ResumeAPI {
         } catch (Exception e) {
             System.err.println("[ResumeAPI] Error parsing resume: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"error\": \"Resume parsing failed: " + e.getMessage().replace("\"", "'") + "\"}");
+            throw new JobPortalException("Resume parsing failed");
         }
     }
 }

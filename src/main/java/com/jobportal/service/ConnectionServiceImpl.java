@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.jobportal.dto.ConnectionRequestDTO;
 import com.jobportal.dto.ConnectionRequestStatus;
@@ -65,6 +66,7 @@ public class ConnectionServiceImpl implements ConnectionService {
     }
 
     @Override
+    @Transactional
     public ConnectionRequestDTO acceptConnectionRequest(Long requestId) throws JobPortalException {
         ConnectionRequest req = connectionRequestRepository.findById(requestId).orElseThrow(() -> new JobPortalException("Request not found"));
         req.setStatus(ConnectionRequestStatus.ACCEPTED);
@@ -110,6 +112,7 @@ public class ConnectionServiceImpl implements ConnectionService {
     }
 
     @Override
+    @Transactional
     public void removeConnection(Long userId1, Long userId2) throws JobPortalException {
         Profile p1 = profileRepository.findById(userId1).orElseThrow(() -> new JobPortalException("Profile 1 not found"));
         Profile p2 = profileRepository.findById(userId2).orElseThrow(() -> new JobPortalException("Profile 2 not found"));

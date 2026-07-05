@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
 
 import com.jobportal.entity.ContactMessage;
 import com.jobportal.entity.FAQ;
@@ -20,6 +22,7 @@ import com.jobportal.service.SupportService;
 @RestController
 @CrossOrigin
 @RequestMapping("/support")
+@Validated
 public class SupportAPI {
 
     @Autowired
@@ -31,13 +34,13 @@ public class SupportAPI {
     }
 
     @PostMapping("/contact")
-    public ResponseEntity<String> submitContactMessage(@RequestBody ContactMessage message) {
+    public ResponseEntity<String> submitContactMessage(@Valid @RequestBody ContactMessage message) {
         supportService.submitContactMessage(message);
         return new ResponseEntity<>("Message sent successfully", HttpStatus.CREATED);
     }
 
     @PostMapping("/feedback")
-    public ResponseEntity<String> submitFeedback(@RequestBody Feedback feedback) {
+    public ResponseEntity<String> submitFeedback(@Valid @RequestBody Feedback feedback) {
         supportService.submitFeedback(feedback);
         return new ResponseEntity<>("Feedback submitted successfully", HttpStatus.CREATED);
     }

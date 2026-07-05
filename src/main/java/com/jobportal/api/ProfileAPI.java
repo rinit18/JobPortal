@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import com.jobportal.dto.ProfileDTO;
 import com.jobportal.exception.JobPortalException;
@@ -36,7 +37,7 @@ public class ProfileAPI {
 		return new ResponseEntity<>(profileService.getAllProfiles(), HttpStatus.OK);
 	}
 	@PutMapping("/update")
-	public ResponseEntity<ProfileDTO>updateProfile(@RequestBody ProfileDTO profileDTO) throws JobPortalException{
+	public ResponseEntity<ProfileDTO>updateProfile(@Valid @RequestBody ProfileDTO profileDTO) throws JobPortalException{
 		return new ResponseEntity<>(profileService.updateProfile(profileDTO), HttpStatus.OK);
 	}
 
