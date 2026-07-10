@@ -6,7 +6,7 @@ CareerConnect is a modern, high-performance job portal designed to connect premi
 
 ### 1. Robust Authentication & Security
 - **JWT (JSON Web Token):** Stateless authentication. Users are verified via tokens on every secure request, minimizing database load.
-- **OTP Verification Engine:** Secure email-based OTP (One Time Password) login and signup flow via `JavaMailSender`. Password resets also require OTP validation to generate secure reset tokens.
+- **OTP Verification Engine:** Secure email-based OTP (One Time Password) flow via `JavaMailSender` for password resets, ensuring secure account recovery.
 - **Spring Security:** Strict method-level and route-level security, ensuring applicants cannot modify company job postings and unauthorized users cannot access private messages.
 - **Rate Limiting:** Protects against Brute Force and Spam attacks using `Bucket4j`. Login attempts are limited to 10 per hour, and OTP requests are limited to 3 per hour per email address.
 
